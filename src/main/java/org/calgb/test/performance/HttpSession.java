@@ -55,7 +55,7 @@ public class HttpSession
     private String lastResponseBody;
     private HttpResponse lastResponse;
     private String lastResponseMessage;
-    enum HttpProtocol{ HTTP, HTTPS}
+    enum HttpProtocol{ HTTP, HTTPS};
 
     public HttpSession(String serverAddress, int port, HttpProtocol protocol)
     {
