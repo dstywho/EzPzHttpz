@@ -17,9 +17,12 @@ import org.apache.http.HttpResponse;
 import org.apache.http.NameValuePair;
 import org.apache.http.ParseException;
 import org.apache.http.client.ClientProtocolException;
+import org.apache.http.client.CookieStore;
 import org.apache.http.client.entity.UrlEncodedFormEntity;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.client.methods.HttpPost;
+import org.apache.http.client.params.ClientPNames;
+import org.apache.http.client.params.CookiePolicy;
 import org.apache.http.client.protocol.ClientContext;
 import org.apache.http.conn.ClientConnectionManager;
 import org.apache.http.conn.scheme.Scheme;
@@ -29,7 +32,10 @@ import org.apache.http.cookie.Cookie;
 import org.apache.http.entity.StringEntity;
 import org.apache.http.impl.client.BasicCookieStore;
 import org.apache.http.impl.client.DefaultHttpClient;
+import org.apache.http.impl.cookie.BasicClientCookie2;
 import org.apache.http.message.BasicHeader;
+import org.apache.http.params.BasicHttpParams;
+import org.apache.http.params.HttpParams;
 import org.apache.http.protocol.BasicHttpContext;
 import org.apache.http.util.EntityUtils;
 import org.slf4j.Logger;
@@ -100,7 +106,11 @@ public class HttpSession {
 
     public HttpResponse executeGet(final String path) throws ClientProtocolException, IOException
         {
+            final HttpParams httpparams = new BasicHttpParams();
+            httpparams.setParameter(ClientPNames.COOKIE_POLICY, CookiePolicy.BROWSER_COMPATIBILITY);
+
             final HttpGet httpget = new HttpGet(path);
+            httpget.setParams(httpparams);
             lastResponse = httpclient.execute(target, httpget, context);
             setLastResponseCodeAndText(lastResponse);
             printTransaction("GET", path);
@@ -127,7 +137,7 @@ public class HttpSession {
             lastResponseMessage = lastResponse.getStatusLine().getReasonPhrase();
         }
 
-    public void init(final String serverAddress, final int port, final HttpProtocol protocol)
+    private void init(final String serverAddress, final int port, final HttpProtocol protocol)
         {
             httpclient = new DefaultHttpClient();
 
@@ -162,6 +172,16 @@ public class HttpSession {
                             e.printStackTrace();
                         }
                 }
+        }
+
+    public void addCookie(final String domain, final String name, final String value, final String path)
+        {
+            final CookieStore store = (CookieStore) context.getAttribute(ClientContext.COOKIE_STORE);
+            final BasicClientCookie2 cookie = new BasicClientCookie2(name, value);
+            cookie.setDomain(domain);
+            cookie.setPath(path);
+            store.addCookie(cookie);
+            context.setAttribute(ClientContext.COOKIE_STORE, store);
         }
 
     public DefaultHttpClient useTrustingTrustManager(final DefaultHttpClient httpClient)

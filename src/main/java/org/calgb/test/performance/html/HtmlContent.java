@@ -48,7 +48,7 @@ public class HtmlContent {
     public HtmlElement find(final String tagName, final String attribute, final String value)
         {
             final Vector<RegexMatch> matches = new RegexMatch(innerHtml.replaceAll("\\n|\\r", "")).find("<" + tagName + "[^>]+" + attribute
-                    + "=" + "\"" + value + "\"" + ".*?\\/>");
+                    + "=" + "\"" + value + "\"" + "[^>]*>");
 
             for (final RegexMatch match : matches)
                 {
