@@ -5,11 +5,11 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Vector;
 
-public class NewHtmlElement {
+public class HtmlElement {
     private String tagName;
     private String innerHtml;
 
-    public NewHtmlElement(final String tagname, final String innerHtml)
+    public HtmlElement(final String tagname, final String innerHtml)
         {
             this.tagName = tagname;
             this.innerHtml = innerHtml;
@@ -40,25 +40,25 @@ public class NewHtmlElement {
             return innerHtml;
         }
 
-    public List<NewHtmlElement> find(String tagName)
+    public List<HtmlElement> find(String tagName)
         {
             Vector<RegexMatch> elems = new RegexMatch(innerHtml.replaceAll("\\n|\\r", "")).find("<" + tagName + ".*?>.*?<\\/" + tagName + ">");
             return buildHtmlElements(tagName, elems);
         }
 
-    public List<NewHtmlElement> find(final String tagName, final String attribute, final String value)
+    public List<HtmlElement> find(final String tagName, final String attribute, final String value)
         {
             final Vector<RegexMatch> matches = new RegexMatch(innerHtml.replaceAll("\\n|\\r", "")).find("<" + tagName + "[^>]+" + attribute + "=" + "\"" + value + "\""
                     + "[^>]*>");
             return buildHtmlElements(tagName, matches);
         }
 
-    private List<NewHtmlElement> buildHtmlElements(final String tagName, final Vector<RegexMatch> matches)
+    private List<HtmlElement> buildHtmlElements(final String tagName, final Vector<RegexMatch> matches)
         {
-            List<NewHtmlElement> elementList = new ArrayList<NewHtmlElement>();
+            List<HtmlElement> elementList = new ArrayList<HtmlElement>();
             for (final RegexMatch match : matches)
                 {
-                    elementList.add(new NewHtmlElement(tagName, match.getText()));
+                    elementList.add(new HtmlElement(tagName, match.getText()));
                 }
             return elementList;
         }
