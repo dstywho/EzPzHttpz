@@ -61,36 +61,16 @@ public class HttpSession {
             init(serverAddress, port, protocol);
         }
 
-    public int getLastResponseCode()
-        {
-            // return lastResponse.getStatusLine().getStatusCode();
-            return lastResponseCode;
-        }
-
-    public String getLastResponseBody() throws ParseException, IOException
-        {
-            // return EntityUtils.toString(lastResponse.getEntity());
-            return lastResponseBody;
-        }
-
-    public String getLastResponseMessage() throws ParseException, IOException
-        {
-            // return EntityUtils.toString(lastResponse.getEntity());
-            return lastResponseMessage;
-        }
-
-    public HttpResponse executePost(final String path, final List<NameValuePair> formparams) throws ClientProtocolException, IOException
+    public SimplifiedResponse executePost(final String path, final List<NameValuePair> formparams) throws ClientProtocolException, IOException
         {
             final UrlEncodedFormEntity entity1 = new UrlEncodedFormEntity(formparams, "UTF-8");
             final HttpPost httppost = new HttpPost(path);
             httppost.setEntity(entity1);
             lastResponse = httpclient.execute(target, httppost, context);
-            setLastResponseCodeAndText(lastResponse);
-            printTransaction("POST", path);
-            return lastResponse;
+            return new SimplifiedResponse(lastResponse);
         }
 
-    public HttpResponse executeSoapPost(final String path, final String soapAction, final String xml) throws ClientProtocolException,
+    public SimplifiedResponse executeSoapPost(final String path, final String soapAction, final String xml) throws ClientProtocolException,
             IOException
         {
             final HttpPost httppost = new HttpPost(path);
@@ -99,23 +79,26 @@ public class HttpSession {
             final StringEntity entity = new StringEntity(xml, "UTF-8");
             httppost.setEntity(entity);
             lastResponse = httpclient.execute(target, httppost, context);
-            setLastResponseCodeAndText(lastResponse);
-            printTransaction("POST", path);
-            return lastResponse;
+            return new SimplifiedResponse(lastResponse);
         }
+    
+    public SimplifiedResponse executeGet(final String path) throws ClientProtocolException, IOException
+    {
+        final HttpParams httpparams = new BasicHttpParams();
+        httpparams.setParameter(ClientPNames.COOKIE_POLICY, CookiePolicy.BROWSER_COMPATIBILITY);
+    
+        final HttpGet httpget = new HttpGet(path);
+        httpget.setParams(httpparams);
+        lastResponse = httpclient.execute(target, httpget, context);
+        printTransaction("GET", path);
+        return new SimplifiedResponse(lastResponse);
+    }
 
-    public HttpResponse executeGet(final String path) throws ClientProtocolException, IOException
-        {
-            final HttpParams httpparams = new BasicHttpParams();
-            httpparams.setParameter(ClientPNames.COOKIE_POLICY, CookiePolicy.BROWSER_COMPATIBILITY);
-
-            final HttpGet httpget = new HttpGet(path);
-            httpget.setParams(httpparams);
-            lastResponse = httpclient.execute(target, httpget, context);
-            setLastResponseCodeAndText(lastResponse);
-            printTransaction("GET", path);
-            return lastResponse;
-        }
+    private SimplifiedResponse createSimplifiedResponse(HttpResponse resp){
+        
+        return null;
+        
+    }
 
     public void printTransaction(final String method, final String path) throws IOException
         {
@@ -128,13 +111,6 @@ public class HttpSession {
                 {
                     lastResponse.getEntity().consumeContent();
                 }
-        }
-
-    public void setLastResponseCodeAndText(final HttpResponse lastResponse) throws ParseException, IOException
-        {
-            lastResponseCode = lastResponse.getStatusLine().getStatusCode();
-            lastResponseBody = EntityUtils.toString(lastResponse.getEntity());
-            lastResponseMessage = lastResponse.getStatusLine().getReasonPhrase();
         }
 
     private void init(final String serverAddress, final int port, final HttpProtocol protocol)
@@ -184,7 +160,7 @@ public class HttpSession {
             context.setAttribute(ClientContext.COOKIE_STORE, store);
         }
 
-    public DefaultHttpClient useTrustingTrustManager(final DefaultHttpClient httpClient)
+    private DefaultHttpClient useTrustingTrustManager(final DefaultHttpClient httpClient)
         {
             try
                 {
@@ -258,13 +234,12 @@ public class HttpSession {
             // PropertyConfigurator.configure("src/log4j.properties");
 
             final HttpSession client = new HttpSession("calgbvsdev4", 80, HttpProtocol.HTTPS);
-            final HttpResponse response = client.executeGet("/Open/services/RandoNode?wsdl");
-            System.out.println(client.getLastResponseMessage());
-            System.out.println(client.getLastResponseBody());
+            SimplifiedResponse response = client.executeGet("/Open/services/RandoNode?wsdl");
+            response.getCode();
 
             final String xml = "<?xml version=\"1.0\" encoding=\"UTF-8\"?><soapenv:Envelope xmlns:soapenv=\"http://schemas.xmlsoap.org/soap/envelope/\" xmlns:xsd=\"http://www.w3.org/2001/XMLSchema\" xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\"><soapenv:Body><getPatientData xmlns=\"urn:node:open:ctsu:westat:com\"><openRequest xsi:type=\"ns1:OpenRequest\" xmlns:ns1=\"urn:node:open:ctsu:westat:com\"><ns1:header xsi:type=\"ns1:OpenTxHeader\"><ns1:isTest xsi:type=\"xsd:boolean\">false</ns1:isTest><ns1:otherValues xsi:type=\"xsd:string\">NULL</ns1:otherValues><ns1:sourceComponent xsi:type=\"xsd:string\">OPEN Portal</ns1:sourceComponent><ns1:targetGroup xsi:type=\"xsd:string\">CALGB</ns1:targetGroup><ns1:timeStamp xsi:type=\"xsd:dateTime\">2010-07-01T14:33:45.769Z</ns1:timeStamp><ns1:txGUID xsi:type=\"xsd:string\">OPEN-TST-100701-1060021</ns1:txGUID><ns1:txType xsi:type=\"xsd:string\">PatientDataRetrival</ns1:txType></ns1:header><ns1:operation xsi:type=\"xsd:string\">POPULATE_DEMOGRAPHY_DATA</ns1:operation><ns1:otherValues xsi:type=\"xsd:string\">not applicable</ns1:otherValues><ns1:targetURL xsi:type=\"xsd:string\">https://www.test.calgbapps.org/Open/services/RandoNode?wsdl</ns1:targetURL></openRequest><openRegistration xsi:type=\"ns2:OpenRegistration\" xmlns:ns2=\"urn:node:open:ctsu:westat:com\"><ns2:ccopAccrual xsi:type=\"xsd:string\">NO</ns2:ccopAccrual><ns2:creditRecipient xsi:type=\"xsd:string\">CALGB</ns2:creditRecipient><ns2:drugShipInvCtepId xsi:type=\"xsd:string\">NULL</ns2:drugShipInvCtepId><ns2:eligibility xsi:type=\"xsd:string\">NULL</ns2:eligibility><ns2:ineligibilityReason xsi:type=\"xsd:string\">NULL</ns2:ineligibilityReason><ns2:previousTrackingNbr xsi:type=\"xsd:long\">-99999999</ns2:previousTrackingNbr><ns2:otherPmtGroup xsi:type=\"xsd:string\">NULL</ns2:otherPmtGroup><ns2:otherValues xsi:type=\"xsd:string\">NULL</ns2:otherValues><ns2:patientId xsi:type=\"xsd:string\">121342</ns2:patientId><ns2:protocolNbr xsi:type=\"xsd:string\">CALGB-140503</ns2:protocolNbr><ns2:randomizedDate xsi:type=\"xsd:dateTime\">2010-07-01T14:33:45.722Z</ns2:randomizedDate><ns2:regSiteCtepId xsi:type=\"xsd:string\">NC010</ns2:regSiteCtepId><ns2:registrarCtepId xsi:type=\"xsd:string\">20431</ns2:registrarCtepId><ns2:registrarEmail xsi:type=\"xsd:string\">russell.anderson@duke.edu</ns2:registrarEmail><ns2:reponsibleInvCtepId xsi:type=\"xsd:string\">17873</ns2:reponsibleInvCtepId><ns2:siteInstructions xsi:type=\"xsd:string\">NULL</ns2:siteInstructions><ns2:status xsi:type=\"xsd:string\">NULL</ns2:status><ns2:statusDetailText xsi:type=\"xsd:string\">NULL</ns2:statusDetailText><ns2:statusText xsi:type=\"xsd:string\">NULL</ns2:statusText><ns2:step xsi:type=\"xsd:string\">1</ns2:step><ns2:stratification xsi:type=\"xsd:string\">NULL</ns2:stratification><ns2:trackingNbr xsi:type=\"xsd:long\">70685</ns2:trackingNbr><ns2:treatingInvCtepId xsi:type=\"xsd:string\">42141</ns2:treatingInvCtepId><ns2:treatmentAssignment xsi:type=\"xsd:string\">NULL</ns2:treatmentAssignment><ns2:courierName xsi:type=\"xsd:string\">NULL</ns2:courierName><ns2:courierNbr xsi:type=\"xsd:string\">NULL</ns2:courierNbr><ns2:creditingInvCtepId xsi:type=\"xsd:string\">17873</ns2:creditingInvCtepId><ns2:userResponse xsi:type=\"xsd:string\">PT_NOT_VALIDATED</ns2:userResponse><ns2:patientStatus xsi:type=\"xsd:string\">NOT_APPLICABLE</ns2:patientStatus><ns2:offStudyReason xsi:type=\"xsd:long\">-99999999</ns2:offStudyReason><ns2:groupProtocolNumber xsi:type=\"xsd:string\">NULL</ns2:groupProtocolNumber><ns2:credentialingExceptionCode xsi:type=\"xsd:string\">NULL</ns2:credentialingExceptionCode><ns2:credentialingExceptionReason xsi:type=\"xsd:string\">NULL</ns2:credentialingExceptionReason><ns2:caseNotes xsi:type=\"ns2:string\" xsi:nil=\"true\"/><ns2:action xsi:type=\"xsd:string\">PROCESS</ns2:action></openRegistration></getPatientData></soapenv:Body></soapenv:Envelope>";
             client.executeSoapPost("/Open/services/RandoNode?wsdl", "urn:node:open:ctsu:westat:com/getPatientData", xml);
-            System.out.println(client.getLastResponseBody());
+            System.out.println();
             // HttpSession client = new HttpSession("blah", 4201);
             // client.executeGet("/icds/Login.action?_eventName=display");
             //
