@@ -18,7 +18,12 @@ public class HtmlElement {
     public HashMap<String, String> getAttr()
         {
             RegexMatch matcher = new RegexMatch(innerHtml);
-            String openTag = matcher.find("<" + tagName + ".*?>").get(0).getText();
+            String openTag = getOpenningTag(matcher);
+            return getAttributesFromTag(openTag);
+        }
+
+    private HashMap<String, String> getAttributesFromTag(String openTag)
+        {
             String attributesOnly = openTag.replaceAll("(<" + tagName + ")|(\\/*>$)|\\\"", "");
             final String[] tagPairs = attributesOnly.split("\\s");
 
@@ -32,7 +37,12 @@ public class HtmlElement {
                         }
                 }
             return attrPairs;
+        }
 
+    private String getOpenningTag(RegexMatch matcher)
+        {
+            String openTag = matcher.find("<" + tagName + ".*?>").get(0).getText();
+            return openTag;
         }
 
     public String getInnerHtml()
@@ -42,8 +52,14 @@ public class HtmlElement {
 
     public List<HtmlElement> find(String tagName)
         {
-            Vector<RegexMatch> elems = new RegexMatch(innerHtml.replaceAll("\\n|\\r", "")).find("<" + tagName + ".*?>.*?<\\/" + tagName + ">");
+            Vector<RegexMatch> elems = getRegExpMatchesByTagName(tagName);
             return buildHtmlElements(tagName, elems);
+        }
+
+    private Vector<RegexMatch> getRegExpMatchesByTagName(String tagName)
+        {
+            Vector<RegexMatch> elems = new RegexMatch(innerHtml.replaceAll("\\n|\\r", "")).find("<" + tagName + ".*?>.*?<\\/" + tagName + ">");
+            return elems;
         }
 
     public List<HtmlElement> find(final String tagName, final String attribute, final String value)
