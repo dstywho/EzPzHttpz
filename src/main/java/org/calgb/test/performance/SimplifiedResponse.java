@@ -4,6 +4,7 @@ import java.io.IOException;
 
 import org.apache.http.HttpResponse;
 import org.apache.http.ParseException;
+import org.apache.http.StatusLine;
 import org.apache.http.util.EntityUtils;
 
 public class SimplifiedResponse {
@@ -23,8 +24,9 @@ public class SimplifiedResponse {
         }
     
     public SimplifiedResponse(HttpResponse response) throws ParseException, IOException{
-        code = response.getStatusLine().getStatusCode();
-        message = response.getStatusLine().getReasonPhrase();
+        StatusLine statusLine = response.getStatusLine();
+		code = statusLine.getStatusCode();
+        message = statusLine.getReasonPhrase();
         body = EntityUtils.toString(response.getEntity());
     }
 
