@@ -91,9 +91,8 @@ public class HttpSession {
 
     private HttpGet buildGet(final String path)
         {
-            final HttpParams httpparams = new BasicHttpParams();
+           final HttpParams httpparams = new BasicHttpParams();
             httpparams.setParameter(ClientPNames.COOKIE_POLICY, CookiePolicy.BROWSER_COMPATIBILITY);
-   
             final HttpGet httpget = new HttpGet(path);
             httpget.setParams(httpparams);
             return httpget;
