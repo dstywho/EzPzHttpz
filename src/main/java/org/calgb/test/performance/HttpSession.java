@@ -1,7 +1,10 @@
 package org.calgb.test.performance;
 
 import java.io.IOException;
+import java.io.UnsupportedEncodingException;
 import java.security.GeneralSecurityException;
+import java.security.KeyManagementException;
+import java.security.NoSuchAlgorithmException;
 import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
 import java.util.List;
@@ -47,25 +50,24 @@ public class HttpSession {
     private BasicHttpContext    context;
     private HttpHost            target;
     private BasicCookieStore    cookieStore;
-    private int                 lastResponseCode;
-    private String              lastResponseBody;
-    private HttpResponse        lastResponse;
-    private String              lastResponseMessage;
+    
+    /**
+     * Need to store this state.
+     */
+    private HttpResponse lastResponse;
 
     public enum HttpProtocol {
         HTTP, HTTPS
     };
 
-    public HttpSession(final String serverAddress, final int port, final HttpProtocol protocol)
+    public HttpSession(final String serverAddress, final int port, final HttpProtocol protocol) throws KeyManagementException, NoSuchAlgorithmException
         {
             init(serverAddress, port, protocol);
         }
 
     public SimplifiedResponse executePost(final String path, final List<NameValuePair> formparams) throws ClientProtocolException, IOException
         {
-            final UrlEncodedFormEntity entity1 = new UrlEncodedFormEntity(formparams, "UTF-8");
-            final HttpPost httppost = new HttpPost(path);
-            httppost.setEntity(entity1);
+            final HttpPost httppost = buildPost(path, formparams);
             lastResponse = httpclient.execute(target, httppost, context);
             return new SimplifiedResponse(lastResponse);
         }
@@ -73,25 +75,46 @@ public class HttpSession {
     public SimplifiedResponse executeSoapPost(final String path, final String soapAction, final String xml) throws ClientProtocolException,
             IOException
         {
-            final HttpPost httppost = new HttpPost(path);
-            httppost.setHeader(new BasicHeader("Content-Type", "text/xml;charset=UTF-8"));
-            httppost.setHeader(new BasicHeader("SOAPAction", soapAction));
-            final StringEntity entity = new StringEntity(xml, "UTF-8");
-            httppost.setEntity(entity);
+            final HttpPost httppost = buildPostForSoap(path, soapAction, xml);
             lastResponse = httpclient.execute(target, httppost, context);
             return new SimplifiedResponse(lastResponse);
         }
-    
+
     public SimplifiedResponse executeGet(final String path) throws ClientProtocolException, IOException
     {
-        final HttpParams httpparams = new BasicHttpParams();
-        httpparams.setParameter(ClientPNames.COOKIE_POLICY, CookiePolicy.BROWSER_COMPATIBILITY);
-    
-        final HttpGet httpget = new HttpGet(path);
-        httpget.setParams(httpparams);
+        final HttpGet httpget = buildGet(path);
         lastResponse = httpclient.execute(target, httpget, context);
-        printTransaction("GET", path);
-        return new SimplifiedResponse(lastResponse);
+        SimplifiedResponse simplifiedResponse = new SimplifiedResponse(lastResponse);
+        printTransaction("GET", path, simplifiedResponse);
+        return simplifiedResponse;
+    }
+
+    private HttpGet buildGet(final String path)
+        {
+            final HttpParams httpparams = new BasicHttpParams();
+            httpparams.setParameter(ClientPNames.COOKIE_POLICY, CookiePolicy.BROWSER_COMPATIBILITY);
+   
+            final HttpGet httpget = new HttpGet(path);
+            httpget.setParams(httpparams);
+            return httpget;
+        }
+
+    private HttpPost buildPost(final String path, final List<NameValuePair> formparams) throws UnsupportedEncodingException
+    {
+        final UrlEncodedFormEntity entity1 = new UrlEncodedFormEntity(formparams, "UTF-8");
+        final HttpPost httppost = new HttpPost(path);
+        httppost.setEntity(entity1);
+        return httppost;
+    }
+
+    private HttpPost buildPostForSoap(final String path, final String soapAction, final String xml) throws UnsupportedEncodingException
+    {
+        final HttpPost httppost = new HttpPost(path);
+        httppost.setHeader(new BasicHeader("Content-Type", "text/xml;charset=UTF-8"));
+        httppost.setHeader(new BasicHeader("SOAPAction", soapAction));
+        final StringEntity entity = new StringEntity(xml, "UTF-8");
+        httppost.setEntity(entity);
+        return httppost;
     }
 
     private SimplifiedResponse createSimplifiedResponse(HttpResponse resp){
@@ -100,9 +123,9 @@ public class HttpSession {
         
     }
 
-    public void printTransaction(final String method, final String path) throws IOException
+    public void printTransaction(final String method, String path, final SimplifiedResponse response) throws IOException
         {
-            LOG.debug(method + " " + path + " Response:" + lastResponseCode + ", " + lastResponseMessage);
+            LOG.debug(method + " " + path + " Response:" + response.getCode() + ", " + response.getBody());
         }
 
     public void releaseConnectionIfAvailiable() throws IOException
@@ -113,7 +136,7 @@ public class HttpSession {
                 }
         }
 
-    private void init(final String serverAddress, final int port, final HttpProtocol protocol)
+    private void init(final String serverAddress, final int port, final HttpProtocol protocol) throws KeyManagementException, NoSuchAlgorithmException
         {
             httpclient = new DefaultHttpClient();
 
@@ -160,10 +183,8 @@ public class HttpSession {
             context.setAttribute(ClientContext.COOKIE_STORE, store);
         }
 
-    private DefaultHttpClient useTrustingTrustManager(final DefaultHttpClient httpClient)
+    private DefaultHttpClient useTrustingTrustManager(final DefaultHttpClient httpClient) throws KeyManagementException, NoSuchAlgorithmException
         {
-            try
-                {
                     // First create a trust manager that won't care.
                     final X509TrustManager trustManager = new X509TrustManager()
                         {
@@ -210,13 +231,6 @@ public class HttpSession {
                     // Finally, apply the ClientConnectionManager to the Http Client
                     // or, as in this example, create a new one.
                     return new DefaultHttpClient(ccm, httpClient.getParams());
-                }
-            catch (final Throwable t)
-                {
-                    // AND NEVER EVER EVER DO THIS, IT IS LAZY AND ALMOST ALWAYS WRONG!
-                    t.printStackTrace();
-                    return null;
-                }
         }
 
     public void printCookies()
@@ -229,7 +243,7 @@ public class HttpSession {
                 }
         }
 
-    public static void main(final String[] args) throws ClientProtocolException, IOException
+    public static void main(final String[] args) throws ClientProtocolException, IOException, KeyManagementException, NoSuchAlgorithmException
         {
             // PropertyConfigurator.configure("src/log4j.properties");
 
