@@ -85,7 +85,7 @@ public class HttpSession {
         final HttpGet httpget = buildGet(path);
         lastResponse = httpclient.execute(target, httpget, context);
         SimplifiedResponse simplifiedResponse = new SimplifiedResponse(lastResponse);
-        printTransaction("GET", path, simplifiedResponse);
+        logTransaction("GET", path, simplifiedResponse);
         return simplifiedResponse;
     }
 
@@ -116,13 +116,7 @@ public class HttpSession {
         return httppost;
     }
 
-    private SimplifiedResponse createSimplifiedResponse(HttpResponse resp){
-        
-        return null;
-        
-    }
-
-    public void printTransaction(final String method, String path, final SimplifiedResponse response) throws IOException
+    public void logTransaction(final String method, String path, final SimplifiedResponse response) throws IOException
         {
             LOG.debug(method + " " + path + " Response:" + response.getCode() + ", " + response.getBody());
         }

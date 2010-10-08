@@ -29,9 +29,6 @@ public class TestServer {
         public void handle(HttpExchange t) throws IOException
             {
                 InputStream is = t.getRequestBody();
-                String method = t.getRequestMethod();
-                Headers headers = t.getRequestHeaders();
-                URI uri = t.getRequestURI();
                 String response = MY_RESPONSE;
                 t.sendResponseHeaders(200, response.length());
                 OutputStream os = t.getResponseBody();

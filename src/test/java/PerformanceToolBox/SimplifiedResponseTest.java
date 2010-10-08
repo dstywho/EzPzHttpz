@@ -15,6 +15,11 @@ import org.junit.Assert;
 import org.junit.Test;
 
 public class SimplifiedResponseTest {
+    private static final String RANDOM_STRING = "randomString";
+    private static final String UTF_8 = "UTF-8";
+    private static final String HTML_HTML = "<html></html>";
+    private static final String SERVER_ERROR = "SERVER ERROR";
+
     @Test
     public void test() throws ParseException, IOException
         {
@@ -24,13 +29,13 @@ public class SimplifiedResponseTest {
 
             EasyMock.expect(mockHttpResponse.getStatusLine()).andReturn(mockStatusLine);
             EasyMock.expect(mockStatusLine.getStatusCode()).andReturn(500).anyTimes();
-            EasyMock.expect(mockStatusLine.getReasonPhrase()).andReturn("SERVER ERROR").anyTimes();
+            EasyMock.expect(mockStatusLine.getReasonPhrase()).andReturn(SERVER_ERROR).anyTimes();
             EasyMock.expect(mockHttpResponse.getEntity()).andReturn(mockHttpEntity);
-            String html = new String("<html></html>");
-            ByteArrayInputStream htmlInputStream = new ByteArrayInputStream(html.getBytes("UTF-8"));
+            String html = new String(HTML_HTML);
+            ByteArrayInputStream htmlInputStream = new ByteArrayInputStream(html.getBytes(UTF_8));
             EasyMock.expect(mockHttpEntity.getContent()).andReturn(htmlInputStream);
             EasyMock.expect(mockHttpEntity.getContentLength()).andReturn(html.length() + 0L).anyTimes();
-            EasyMock.expect(mockHttpEntity.getContentType()).andReturn(new BasicHeader("randomString", "anything")).anyTimes();
+            EasyMock.expect(mockHttpEntity.getContentType()).andReturn(new BasicHeader(RANDOM_STRING, RANDOM_STRING)).anyTimes();
 
             EasyMock.replay(mockHttpEntity, mockHttpResponse, mockStatusLine);
             SimplifiedResponse simpResponse = new SimplifiedResponse(mockHttpResponse);
