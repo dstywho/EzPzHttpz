@@ -22,18 +22,30 @@ import org.calgb.test.performance.SimplifiedResponse;
 import org.calgb.test.performance.HttpSession.HttpProtocol;
 import org.easymock.EasyMock;
 import org.junit.After;
+import org.junit.AfterClass;
 import org.junit.Assert;
 import org.junit.Before;
+import org.junit.BeforeClass;
+import org.junit.Ignore;
 import org.junit.Test;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class HttpSessionTest {
+    private static final Logger LOG = LoggerFactory.getLogger(HttpSessionTest.class);
    public static int PORT = 5555;
     
     class ServerThread extends Thread{
+        
+        private int port;
+
+        public ServerThread(int port){
+            this.port = port;
+        }
         private SimpleServer server;
 
         public void run(){
-            server = new SimpleServer(PORT);
+            server = new SimpleServer(port);
             try
                 {
                     server.start();
@@ -53,12 +65,15 @@ public class HttpSessionTest {
 
     @Before
     public void setup(){
-        serverThread = new ServerThread();
+           
+        serverThread = new ServerThread(PORT );
         serverThread.start();
     }
+    
     @After
-    public void teardown(){
+    public void teardown() throws InterruptedException{
         serverThread.stopServer();
+        Thread.sleep(2000);
     }
     
     @Test
@@ -66,6 +81,7 @@ public class HttpSessionTest {
         {
             HttpSession session = new HttpSession("localhost",PORT, HttpProtocol.HTTP);
             SimplifiedResponse response = session.executeGet("/");
+            LOG.debug(response.getBody());
             assertEquals(SimpleServer.MY_RESPONSE,response.getBody());
         }
     @Test
@@ -74,6 +90,7 @@ public class HttpSessionTest {
             HttpSession session = new HttpSession("localhost",PORT, HttpProtocol.HTTP);
             List<NameValuePair> params = new ArrayList<NameValuePair>(){{add(new BasicNameValuePair("blah", "val2"));}};
             SimplifiedResponse response = session.executePost("/", params);
+            
             assertEquals(SimpleServer.MY_RESPONSE,response.getBody());
         }
 }

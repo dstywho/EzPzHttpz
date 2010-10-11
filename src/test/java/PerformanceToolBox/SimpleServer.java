@@ -8,12 +8,18 @@ import java.net.ServerSocket;
 import java.net.Socket;
 import java.net.URI;
 
+import org.calgb.test.performance.HttpSession;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import com.sun.net.httpserver.Headers;
 import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpHandler;
 import com.sun.net.httpserver.HttpServer;
 
 public class SimpleServer {
+    
+    private static final Logger LOG = LoggerFactory.getLogger(SimpleServer.class);
     public static final String MY_RESPONSE = "MY RESPONSE";
     private int          port;
     private ServerSocket serverSocket;
