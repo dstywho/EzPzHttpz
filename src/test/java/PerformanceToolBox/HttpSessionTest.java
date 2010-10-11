@@ -35,7 +35,7 @@ public class HttpSessionTest {
     private static final Logger LOG = LoggerFactory.getLogger(HttpSessionTest.class);
    public static int PORT = 5555;
     
-    class ServerThread extends Thread{
+    static class ServerThread extends Thread{
         
         private int port;
 
@@ -61,19 +61,18 @@ public class HttpSessionTest {
             stop();
         }
     }
-    private ServerThread serverThread;
+    private static ServerThread serverThread;
 
-    @Before
-    public void setup(){
+    @BeforeClass
+    public static void setup(){
            
         serverThread = new ServerThread(PORT );
         serverThread.start();
     }
     
-    @After
-    public void teardown() throws InterruptedException{
+    @AfterClass
+    public static void teardown() throws InterruptedException{
         serverThread.stopServer();
-        Thread.sleep(2000);
     }
     
     @Test
