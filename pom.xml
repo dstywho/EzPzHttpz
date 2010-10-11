@@ -62,7 +62,11 @@
 			<version>4.8.1</version>
 			<scope>test</scope>
 		</dependency>
-
+<dependency>
+  <groupId>com.sun.net.httpserver</groupId>
+  <artifactId>http</artifactId>
+  <version>20070405</version>
+</dependency>
 		<dependency>
 			<groupId>ca.juliusdavies</groupId>
 			<artifactId>not-yet-commons-ssl</artifactId>
