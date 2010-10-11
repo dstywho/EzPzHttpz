@@ -13,14 +13,14 @@ import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpHandler;
 import com.sun.net.httpserver.HttpServer;
 
-public class TestServer {
+public class SimpleServer {
     public static final String MY_RESPONSE = "MY RESPONSE";
     private int          port;
     private ServerSocket serverSocket;
     private HttpServer   server;
 
     
-    public TestServer(int port){
+    public SimpleServer(int port){
         this.port = port;
     }
     public class GetHandler implements HttpHandler {
@@ -45,8 +45,13 @@ public class TestServer {
             server.setExecutor(null); // creates a default executor
             
             server.start();
+            
 
         }
+    
+    public void stop(){
+        server.stop(0);
+    }
 
     /**
      * @param args
@@ -54,7 +59,7 @@ public class TestServer {
      */
     public static void main(String[] args) throws IOException
         {
-            TestServer server = new TestServer(5555);
+            SimpleServer server = new SimpleServer(5555);
             server.start();
             
 

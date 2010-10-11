@@ -30,8 +30,10 @@ public class HttpSessionTest {
    public static int PORT = 5555;
     
     class ServerThread extends Thread{
+        private SimpleServer server;
+
         public void run(){
-            TestServer server = new TestServer(PORT);
+            server = new SimpleServer(PORT);
             try
                 {
                     server.start();
@@ -40,6 +42,11 @@ public class HttpSessionTest {
                 {
                     e.printStackTrace();
                 }
+        }
+        
+        public void stopServer(){
+            server.stop();
+            stop();
         }
     }
     private ServerThread serverThread;
@@ -51,7 +58,7 @@ public class HttpSessionTest {
     }
     @After
     public void teardown(){
-        serverThread.stop();
+        serverThread.stopServer();
     }
     
     @Test
@@ -59,7 +66,7 @@ public class HttpSessionTest {
         {
             HttpSession session = new HttpSession("localhost",PORT, HttpProtocol.HTTP);
             SimplifiedResponse response = session.executeGet("/");
-            assertEquals(TestServer.MY_RESPONSE,response.getBody());
+            assertEquals(SimpleServer.MY_RESPONSE,response.getBody());
         }
     @Test
     public void postRequestSpec() throws ParseException, IOException, KeyManagementException, NoSuchAlgorithmException
@@ -67,6 +74,6 @@ public class HttpSessionTest {
             HttpSession session = new HttpSession("localhost",PORT, HttpProtocol.HTTP);
             List<NameValuePair> params = new ArrayList<NameValuePair>(){{add(new BasicNameValuePair("blah", "val2"));}};
             SimplifiedResponse response = session.executePost("/", params);
-            assertEquals(TestServer.MY_RESPONSE,response.getBody());
+            assertEquals(SimpleServer.MY_RESPONSE,response.getBody());
         }
 }
