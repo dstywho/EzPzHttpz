@@ -1,5 +1,7 @@
 package org.calgb.test.performance.html;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Vector;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -11,13 +13,13 @@ public class RegexMatch {
 		this.content = content;
 	}
 	
-	public Vector<RegexMatch> find(String regexp){
+	public List<RegexMatch> find(String regexp){
 		Matcher matcher = Pattern.compile(regexp).matcher(content);
-		Vector<RegexMatch> vector = new Vector<RegexMatch>(); 
+		ArrayList<RegexMatch> matches = new ArrayList<RegexMatch>(); 
 		while(matcher.find()){
-			 vector.add(new RegexMatch(content.substring(matcher.start(), matcher.end())));
+		    matches.add(new RegexMatch(content.substring(matcher.start(), matcher.end())));
 		}
-		return vector;
+		return matches;
 	}
 
 	public String getText() {

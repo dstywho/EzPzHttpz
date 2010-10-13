@@ -69,7 +69,9 @@ public class HttpSession {
         {
             final HttpPost httppost = buildPost(path, formparams);
             lastResponse = httpclient.execute(target, httppost, context);
-            return new SimplifiedResponse(lastResponse);
+            SimplifiedResponse simplifiedResponse = new SimplifiedResponse(lastResponse);
+            LOG.debug("Request:{} {} Response: {}, {}", new Object[]{"POST",path,simplifiedResponse.getCode(), simplifiedResponse.getBody()});
+            return simplifiedResponse;
         }
 
     public SimplifiedResponse executeSoapPost(final String path, final String soapAction, final String xml) throws ClientProtocolException,
@@ -77,7 +79,9 @@ public class HttpSession {
         {
             final HttpPost httppost = buildPostForSoap(path, soapAction, xml);
             lastResponse = httpclient.execute(target, httppost, context);
-            return new SimplifiedResponse(lastResponse);
+            SimplifiedResponse simplifiedResponse = new SimplifiedResponse(lastResponse);
+            LOG.debug("Request:{} {} Response: {}, {}", new Object[]{"POST",path,simplifiedResponse.getCode(), simplifiedResponse.getBody()});
+            return simplifiedResponse;
         }
 
     public SimplifiedResponse executeGet(final String path) throws ClientProtocolException, IOException
@@ -85,7 +89,7 @@ public class HttpSession {
         final HttpGet httpget = buildGet(path);
         lastResponse = httpclient.execute(target, httpget, context);
         SimplifiedResponse simplifiedResponse = new SimplifiedResponse(lastResponse);
-        logTransaction("GET", path, simplifiedResponse);
+        LOG.debug("Request:{} {} Response: {}, {}", new Object[]{"GET",path,simplifiedResponse.getCode(), simplifiedResponse.getBody()});
         return simplifiedResponse;
     }
 
@@ -115,11 +119,6 @@ public class HttpSession {
         httppost.setEntity(entity);
         return httppost;
     }
-
-    public void logTransaction(final String method, String path, final SimplifiedResponse response) throws IOException
-        {
-            LOG.debug(method + " " + path + " Response:" + response.getCode() + ", " + response.getBody());
-        }
 
     public void releaseConnectionIfAvailiable() throws IOException
         {

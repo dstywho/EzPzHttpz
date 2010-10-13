@@ -50,28 +50,28 @@ public class HtmlElement {
             return innerHtml;
         }
 
-    public List<HtmlElement> find(String tagName)
+    public HtmlElementList find(String tagName)
         {
-            Vector<RegexMatch> elems = getRegExpMatchesByTagName(tagName);
+            List<RegexMatch> elems = getRegExpMatchesByTagName(tagName);
             return buildHtmlElements(tagName, elems);
         }
 
-    private Vector<RegexMatch> getRegExpMatchesByTagName(String tagName)
+    private List<RegexMatch> getRegExpMatchesByTagName(String tagName)
         {
-            Vector<RegexMatch> elems = new RegexMatch(innerHtml.replaceAll("\\n|\\r", "")).find("<" + tagName + ".*?>.*?<\\/" + tagName + ">");
+            List<RegexMatch> elems = new RegexMatch(innerHtml.replaceAll("\\n|\\r", "")).find("<" + tagName + ".*?>.*?<\\/" + tagName + ">");
             return elems;
         }
 
     public List<HtmlElement> find(final String tagName, final String attribute, final String value)
         {
-            final Vector<RegexMatch> matches = new RegexMatch(innerHtml.replaceAll("\\n|\\r", "")).find("<" + tagName + "[^>]+" + attribute + "=" + "\"" + value + "\""
+            final List<RegexMatch> matches = new RegexMatch(innerHtml.replaceAll("\\n|\\r", "")).find("<" + tagName + "[^>]+" + attribute + "=" + "\"" + value + "\""
                     + "[^>]*>");
             return buildHtmlElements(tagName, matches);
         }
 
-    private List<HtmlElement> buildHtmlElements(final String tagName, final Vector<RegexMatch> matches)
+    private HtmlElementList buildHtmlElements(final String tagName, final List<RegexMatch> matches)
         {
-            List<HtmlElement> elementList = new ArrayList<HtmlElement>();
+            HtmlElementList elementList = new HtmlElementList();
             for (final RegexMatch match : matches)
                 {
                     elementList.add(new HtmlElement(tagName, match.getText()));
