@@ -78,7 +78,7 @@ public class HttpSessionTest {
     @Test
     public void getRequestSpec() throws ParseException, IOException, KeyManagementException, NoSuchAlgorithmException
         {
-            HttpSession session = new HttpSession("localhost",PORT, HttpProtocol.HTTP);
+            final HttpSession session = new HttpSession("localhost",PORT, HttpProtocol.HTTP);
             SimplifiedResponse response = session.executeGet("/");
             LOG.debug(response.getBody());
             assertEquals(SimpleServer.MY_RESPONSE,response.getBody());
@@ -86,7 +86,7 @@ public class HttpSessionTest {
     @Test
     public void postRequestSpec() throws ParseException, IOException, KeyManagementException, NoSuchAlgorithmException
         {
-            HttpSession session = new HttpSession("localhost",PORT, HttpProtocol.HTTP);
+            final HttpSession session = new HttpSession("localhost",PORT, HttpProtocol.HTTP);
             List<NameValuePair> params = new ArrayList<NameValuePair>(){{add(new BasicNameValuePair("blah", "val2"));}};
             SimplifiedResponse response = session.executePost("/", params);
             
