@@ -45,7 +45,7 @@ public class HtmlElement {
             return openTag;
         }
 
-    public String getInnerHtml()
+    public String getHtml()
         {
             return innerHtml;
         }
