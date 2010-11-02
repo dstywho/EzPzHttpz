@@ -7,17 +7,23 @@ import java.util.Vector;
 
 public class HtmlElement {
     private String tagName;
-    private String innerHtml;
+    private String html;
+
+    public HtmlElement(String html)
+        {
+            tagName = "html";
+            this.html = html;
+        }
 
     public HtmlElement(final String tagname, final String innerHtml)
         {
             this.tagName = tagname;
-            this.innerHtml = innerHtml;
+            this.html = innerHtml;
         }
 
     public HashMap<String, String> getAttr()
         {
-            RegexMatch matcher = new RegexMatch(innerHtml);
+            RegexMatch matcher = new RegexMatch(html);
             String openTag = getOpenningTag(matcher);
             return getAttributesFromTag(openTag);
         }
@@ -47,7 +53,7 @@ public class HtmlElement {
 
     public String getHtml()
         {
-            return innerHtml;
+            return html;
         }
 
     public HtmlElementList find(String tagName)
@@ -56,16 +62,20 @@ public class HtmlElement {
             return buildHtmlElements(tagName, elems);
         }
 
+    public HtmlElement findById(String tagName, String id)
+        {
+            return find(tagName, "id", id).get(0);
+        }
+
     private List<RegexMatch> getRegExpMatchesByTagName(String tagName)
         {
-            List<RegexMatch> elems = new RegexMatch(innerHtml.replaceAll("\\n|\\r", "")).find("<" + tagName + ".*?>.*?<\\/" + tagName + ">");
+            List<RegexMatch> elems = new RegexMatch(html.replaceAll("\\n|\\r", "")).find("<" + tagName + ".*?>.*?<\\/" + tagName + ">");
             return elems;
         }
 
     public List<HtmlElement> find(final String tagName, final String attribute, final String value)
         {
-            final List<RegexMatch> matches = new RegexMatch(innerHtml.replaceAll("\\n|\\r", "")).find("<" + tagName + "[^>]+" + attribute + "=" + "\"" + value + "\""
-                    + "[^>]*>");
+            final List<RegexMatch> matches = new RegexMatch(html.replaceAll("\\n|\\r", "")).find("<" + tagName + "[^>]+" + attribute + "=" + "\"" + value + "\"" + "[^>]*>");
             return buildHtmlElements(tagName, matches);
         }
 

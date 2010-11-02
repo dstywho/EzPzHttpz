@@ -7,6 +7,8 @@ import java.security.KeyManagementException;
 import java.security.NoSuchAlgorithmException;
 import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
+import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 
 import javax.net.ssl.SSLContext;
@@ -37,6 +39,7 @@ import org.apache.http.impl.client.BasicCookieStore;
 import org.apache.http.impl.client.DefaultHttpClient;
 import org.apache.http.impl.cookie.BasicClientCookie2;
 import org.apache.http.message.BasicHeader;
+import org.apache.http.message.BasicNameValuePair;
 import org.apache.http.params.BasicHttpParams;
 import org.apache.http.params.HttpParams;
 import org.apache.http.protocol.BasicHttpContext;
@@ -50,11 +53,11 @@ public class HttpSession {
     private BasicHttpContext    context;
     private HttpHost            target;
     private BasicCookieStore    cookieStore;
-    
+
     /**
      * Need to store this state.
      */
-    private HttpResponse lastResponse;
+    private HttpResponse        lastResponse;
 
     public enum HttpProtocol {
         HTTP, HTTPS
@@ -70,32 +73,46 @@ public class HttpSession {
             final HttpPost httppost = buildPost(path, formparams);
             lastResponse = httpclient.execute(target, httppost, context);
             SimplifiedResponse simplifiedResponse = new SimplifiedResponse(lastResponse);
-            LOG.debug("Request:{} {} Response: {}, {}", new Object[]{"POST",path,simplifiedResponse.getCode(), simplifiedResponse.getBody()});
+            LOG.debug("Request:{} {} Response: {}", new Object[] { "POST", path, simplifiedResponse.getCode() });
             return simplifiedResponse;
         }
 
-    public SimplifiedResponse executeSoapPost(final String path, final String soapAction, final String xml) throws ClientProtocolException,
-            IOException
+    public SimplifiedResponse executePost(final String path, final HashMap<String,String> params) throws ClientProtocolException, IOException
+        {
+            List<NameValuePair> formparams = convertHashMapToNameValuePairsList(params);
+            return executePost(path, formparams);
+        }
+    
+    private List<NameValuePair> convertHashMapToNameValuePairsList(HashMap<String,String> params){
+        ArrayList<NameValuePair> namedValuePairs = new ArrayList<NameValuePair>();
+        for(String paramName : params.keySet()){
+            namedValuePairs.add(new BasicNameValuePair(paramName, params.get(paramName)));
+        }
+        return namedValuePairs;
+        
+    }
+
+    public SimplifiedResponse executeSoapPost(final String path, final String soapAction, final String xml) throws ClientProtocolException, IOException
         {
             final HttpPost httppost = buildPostForSoap(path, soapAction, xml);
             lastResponse = httpclient.execute(target, httppost, context);
             SimplifiedResponse simplifiedResponse = new SimplifiedResponse(lastResponse);
-            LOG.debug("Request:{} {} Response: {}, {}", new Object[]{"POST",path,simplifiedResponse.getCode(), simplifiedResponse.getBody()});
+            LOG.debug("Request:{} {} Response: {}, {}", new Object[] { "POST", path, simplifiedResponse.getCode(), simplifiedResponse.getBody() });
             return simplifiedResponse;
         }
 
     public SimplifiedResponse executeGet(final String path) throws ClientProtocolException, IOException
-    {
-        final HttpGet httpget = buildGet(path);
-        lastResponse = httpclient.execute(target, httpget, context);
-        SimplifiedResponse simplifiedResponse = new SimplifiedResponse(lastResponse);
-        LOG.debug("Request:{} {} Response: {}, {}", new Object[]{"GET",path,simplifiedResponse.getCode(), simplifiedResponse.getBody()});
-        return simplifiedResponse;
-    }
+        {
+            final HttpGet httpget = buildGet(path);
+            lastResponse = httpclient.execute(target, httpget, context);
+            SimplifiedResponse simplifiedResponse = new SimplifiedResponse(lastResponse);
+            LOG.debug("Request:{} {} Response: {}", new Object[] { "GET", path, simplifiedResponse.getCode() });
+            return simplifiedResponse;
+        }
 
     private HttpGet buildGet(final String path)
         {
-           final HttpParams httpparams = new BasicHttpParams();
+            final HttpParams httpparams = new BasicHttpParams();
             httpparams.setParameter(ClientPNames.COOKIE_POLICY, CookiePolicy.BROWSER_COMPATIBILITY);
             final HttpGet httpget = new HttpGet(path);
             httpget.setParams(httpparams);
@@ -103,22 +120,22 @@ public class HttpSession {
         }
 
     private HttpPost buildPost(final String path, final List<NameValuePair> formparams) throws UnsupportedEncodingException
-    {
-        final UrlEncodedFormEntity entity1 = new UrlEncodedFormEntity(formparams, "UTF-8");
-        final HttpPost httppost = new HttpPost(path);
-        httppost.setEntity(entity1);
-        return httppost;
-    }
+        {
+            final UrlEncodedFormEntity entity1 = new UrlEncodedFormEntity(formparams, "UTF-8");
+            final HttpPost httppost = new HttpPost(path);
+            httppost.setEntity(entity1);
+            return httppost;
+        }
 
     private HttpPost buildPostForSoap(final String path, final String soapAction, final String xml) throws UnsupportedEncodingException
-    {
-        final HttpPost httppost = new HttpPost(path);
-        httppost.setHeader(new BasicHeader("Content-Type", "text/xml;charset=UTF-8"));
-        httppost.setHeader(new BasicHeader("SOAPAction", soapAction));
-        final StringEntity entity = new StringEntity(xml, "UTF-8");
-        httppost.setEntity(entity);
-        return httppost;
-    }
+        {
+            final HttpPost httppost = new HttpPost(path);
+            httppost.setHeader(new BasicHeader("Content-Type", "text/xml;charset=UTF-8"));
+            httppost.setHeader(new BasicHeader("SOAPAction", soapAction));
+            final StringEntity entity = new StringEntity(xml, "UTF-8");
+            httppost.setEntity(entity);
+            return httppost;
+        }
 
     public void releaseConnectionIfAvailiable() throws IOException
         {
@@ -177,57 +194,54 @@ public class HttpSession {
 
     private DefaultHttpClient useTrustingTrustManager(final DefaultHttpClient httpClient) throws KeyManagementException, NoSuchAlgorithmException
         {
-                    // First create a trust manager that won't care.
-                    final X509TrustManager trustManager = new X509TrustManager()
+            // First create a trust manager that won't care.
+            final X509TrustManager trustManager = new X509TrustManager()
+                {
+                    public void checkClientTrusted(final X509Certificate[] chain, final String authType) throws CertificateException
                         {
-                            public void checkClientTrusted(final X509Certificate[] chain, final String authType)
-                                    throws CertificateException
-                                {
-                                    // Don't do anything.
-                                }
+                            // Don't do anything.
+                        }
 
-                            public void checkServerTrusted(final X509Certificate[] chain, final String authType)
-                                    throws CertificateException
-                                {
-                                    // Don't do anything.
-                                }
+                    public void checkServerTrusted(final X509Certificate[] chain, final String authType) throws CertificateException
+                        {
+                            // Don't do anything.
+                        }
 
-                            public X509Certificate[] getAcceptedIssuers()
-                                {
-                                    // Don't do anything.
-                                    return null;
-                                }
-                        };
+                    public X509Certificate[] getAcceptedIssuers()
+                        {
+                            // Don't do anything.
+                            return null;
+                        }
+                };
 
-                    // Now put the trust manager into an SSLContext.
-                    final SSLContext sslcontext = SSLContext.getInstance("TLS");
-                    sslcontext.init(null, new TrustManager[] { trustManager }, null);
+            // Now put the trust manager into an SSLContext.
+            final SSLContext sslcontext = SSLContext.getInstance("TLS");
+            sslcontext.init(null, new TrustManager[] { trustManager }, null);
 
-                    // Use the above SSLContext to create your socket factory
-                    // (I found trying to extend the factory a bit difficult due to a
-                    // call to createSocket with no arguments, a method which doesn't
-                    // exist anywhere I can find, but hey-ho).
-                    final SSLSocketFactory sf = new SSLSocketFactory(sslcontext);
-                    sf.setHostnameVerifier(SSLSocketFactory.ALLOW_ALL_HOSTNAME_VERIFIER);
+            // Use the above SSLContext to create your socket factory
+            // (I found trying to extend the factory a bit difficult due to a
+            // call to createSocket with no arguments, a method which doesn't
+            // exist anywhere I can find, but hey-ho).
+            final SSLSocketFactory sf = new SSLSocketFactory(sslcontext);
+            sf.setHostnameVerifier(SSLSocketFactory.ALLOW_ALL_HOSTNAME_VERIFIER);
 
-                    // If you want a thread safe client, use the ThreadSafeConManager, but
-                    // otherwise just grab the one from the current client, and get hold of its
-                    // schema registry. THIS IS THE KEY THING.
-                    final ClientConnectionManager ccm = httpClient.getConnectionManager();
-                    final SchemeRegistry schemeRegistry = ccm.getSchemeRegistry();
+            // If you want a thread safe client, use the ThreadSafeConManager, but
+            // otherwise just grab the one from the current client, and get hold of its
+            // schema registry. THIS IS THE KEY THING.
+            final ClientConnectionManager ccm = httpClient.getConnectionManager();
+            final SchemeRegistry schemeRegistry = ccm.getSchemeRegistry();
 
-                    // Register our new socket factory with the typical SSL port and the
-                    // correct protocol name.
-                    schemeRegistry.register(new Scheme("https", sf, 443));
+            // Register our new socket factory with the typical SSL port and the
+            // correct protocol name.
+            schemeRegistry.register(new Scheme("https", sf, 443));
 
-                    // Finally, apply the ClientConnectionManager to the Http Client
-                    // or, as in this example, create a new one.
-                    return new DefaultHttpClient(ccm, httpClient.getParams());
+            // Finally, apply the ClientConnectionManager to the Http Client
+            // or, as in this example, create a new one.
+            return new DefaultHttpClient(ccm, httpClient.getParams());
         }
-
     public void printCookies()
         {
-            System.out.println("PRINT COOKIES");
+            LOG.debug("PRINT COOKIES");
             for (final Cookie cookie : cookieStore.getCookies())
                 {
                     System.out.println(cookie.getName());
@@ -245,7 +259,6 @@ public class HttpSession {
 
             final String xml = "<?xml version=\"1.0\" encoding=\"UTF-8\"?><soapenv:Envelope xmlns:soapenv=\"http://schemas.xmlsoap.org/soap/envelope/\" xmlns:xsd=\"http://www.w3.org/2001/XMLSchema\" xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\"><soapenv:Body><getPatientData xmlns=\"urn:node:open:ctsu:westat:com\"><openRequest xsi:type=\"ns1:OpenRequest\" xmlns:ns1=\"urn:node:open:ctsu:westat:com\"><ns1:header xsi:type=\"ns1:OpenTxHeader\"><ns1:isTest xsi:type=\"xsd:boolean\">false</ns1:isTest><ns1:otherValues xsi:type=\"xsd:string\">NULL</ns1:otherValues><ns1:sourceComponent xsi:type=\"xsd:string\">OPEN Portal</ns1:sourceComponent><ns1:targetGroup xsi:type=\"xsd:string\">CALGB</ns1:targetGroup><ns1:timeStamp xsi:type=\"xsd:dateTime\">2010-07-01T14:33:45.769Z</ns1:timeStamp><ns1:txGUID xsi:type=\"xsd:string\">OPEN-TST-100701-1060021</ns1:txGUID><ns1:txType xsi:type=\"xsd:string\">PatientDataRetrival</ns1:txType></ns1:header><ns1:operation xsi:type=\"xsd:string\">POPULATE_DEMOGRAPHY_DATA</ns1:operation><ns1:otherValues xsi:type=\"xsd:string\">not applicable</ns1:otherValues><ns1:targetURL xsi:type=\"xsd:string\">https://www.test.calgbapps.org/Open/services/RandoNode?wsdl</ns1:targetURL></openRequest><openRegistration xsi:type=\"ns2:OpenRegistration\" xmlns:ns2=\"urn:node:open:ctsu:westat:com\"><ns2:ccopAccrual xsi:type=\"xsd:string\">NO</ns2:ccopAccrual><ns2:creditRecipient xsi:type=\"xsd:string\">CALGB</ns2:creditRecipient><ns2:drugShipInvCtepId xsi:type=\"xsd:string\">NULL</ns2:drugShipInvCtepId><ns2:eligibility xsi:type=\"xsd:string\">NULL</ns2:eligibility><ns2:ineligibilityReason xsi:type=\"xsd:string\">NULL</ns2:ineligibilityReason><ns2:previousTrackingNbr xsi:type=\"xsd:long\">-99999999</ns2:previousTrackingNbr><ns2:otherPmtGroup xsi:type=\"xsd:string\">NULL</ns2:otherPmtGroup><ns2:otherValues xsi:type=\"xsd:string\">NULL</ns2:otherValues><ns2:patientId xsi:type=\"xsd:string\">121342</ns2:patientId><ns2:protocolNbr xsi:type=\"xsd:string\">CALGB-140503</ns2:protocolNbr><ns2:randomizedDate xsi:type=\"xsd:dateTime\">2010-07-01T14:33:45.722Z</ns2:randomizedDate><ns2:regSiteCtepId xsi:type=\"xsd:string\">NC010</ns2:regSiteCtepId><ns2:registrarCtepId xsi:type=\"xsd:string\">20431</ns2:registrarCtepId><ns2:registrarEmail xsi:type=\"xsd:string\">russell.anderson@duke.edu</ns2:registrarEmail><ns2:reponsibleInvCtepId xsi:type=\"xsd:string\">17873</ns2:reponsibleInvCtepId><ns2:siteInstructions xsi:type=\"xsd:string\">NULL</ns2:siteInstructions><ns2:status xsi:type=\"xsd:string\">NULL</ns2:status><ns2:statusDetailText xsi:type=\"xsd:string\">NULL</ns2:statusDetailText><ns2:statusText xsi:type=\"xsd:string\">NULL</ns2:statusText><ns2:step xsi:type=\"xsd:string\">1</ns2:step><ns2:stratification xsi:type=\"xsd:string\">NULL</ns2:stratification><ns2:trackingNbr xsi:type=\"xsd:long\">70685</ns2:trackingNbr><ns2:treatingInvCtepId xsi:type=\"xsd:string\">42141</ns2:treatingInvCtepId><ns2:treatmentAssignment xsi:type=\"xsd:string\">NULL</ns2:treatmentAssignment><ns2:courierName xsi:type=\"xsd:string\">NULL</ns2:courierName><ns2:courierNbr xsi:type=\"xsd:string\">NULL</ns2:courierNbr><ns2:creditingInvCtepId xsi:type=\"xsd:string\">17873</ns2:creditingInvCtepId><ns2:userResponse xsi:type=\"xsd:string\">PT_NOT_VALIDATED</ns2:userResponse><ns2:patientStatus xsi:type=\"xsd:string\">NOT_APPLICABLE</ns2:patientStatus><ns2:offStudyReason xsi:type=\"xsd:long\">-99999999</ns2:offStudyReason><ns2:groupProtocolNumber xsi:type=\"xsd:string\">NULL</ns2:groupProtocolNumber><ns2:credentialingExceptionCode xsi:type=\"xsd:string\">NULL</ns2:credentialingExceptionCode><ns2:credentialingExceptionReason xsi:type=\"xsd:string\">NULL</ns2:credentialingExceptionReason><ns2:caseNotes xsi:type=\"ns2:string\" xsi:nil=\"true\"/><ns2:action xsi:type=\"xsd:string\">PROCESS</ns2:action></openRegistration></getPatientData></soapenv:Body></soapenv:Envelope>";
             client.executeSoapPost("/Open/services/RandoNode?wsdl", "urn:node:open:ctsu:westat:com/getPatientData", xml);
-            System.out.println();
             // HttpSession client = new HttpSession("blah", 4201);
             // client.executeGet("/icds/Login.action?_eventName=display");
             //
