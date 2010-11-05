@@ -48,47 +48,92 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 public class HttpSession {
-    private static final Logger LOG = LoggerFactory.getLogger(HttpSession.class);
+    private static final Logger LOG  = LoggerFactory.getLogger(HttpSession.class);
+    private static final String POST = "POST";
     private DefaultHttpClient   httpclient;
     private BasicHttpContext    context;
+
     public BasicHttpContext getContext()
         {
             return context;
         }
 
-
-    private HttpHost            target;
+    private HttpHost     target;
 
     /**
      * Need to store this state.
      */
-    private HttpResponse        lastResponse;
+    private HttpResponse lastResponse;
 
     public enum HttpProtocol {
         HTTP, HTTPS
     };
 
-    public HttpSession(final String serverAddress, final int port, final HttpProtocol protocol) throws KeyManagementException, NoSuchAlgorithmException
+    public HttpSession(final String serverAddress, final int port, final HttpProtocol protocol) throws SessionStartException
         {
-            init(serverAddress, port, protocol);
+            try
+                {
+                    init(serverAddress, port, protocol);
+                }
+            catch (Exception e)
+                {
+                    e.printStackTrace();
+                    throw new SessionStartException("Failed to start http session.", e); 
+                }
         }
 
-    public HttpSession(final String serverAddress, final int port, final HttpProtocol protocol, BasicHttpContext context) throws KeyManagementException, NoSuchAlgorithmException
-        {
+    public HttpSession(final String serverAddress, final int port, final HttpProtocol protocol, BasicHttpContext context) throws SessionStartException {
             this.context = context;
-            setTarget(serverAddress, port, protocol);
+           
+            try
+                {
+                    setTarget(serverAddress, port, protocol);
+                }
+            catch (Exception e)
+                {
+                    e.printStackTrace();
+                    throw new SessionStartException("Failed to start http session.", e); 
+                }
         }
 
-    public SimplifiedResponse executePost(final String path, final List<NameValuePair> formparams) throws ClientProtocolException, IOException
+    public SimplifiedResponse executePost(final String path, final List<NameValuePair> formparams) throws RequestException, ResponseParseException
         {
-            final HttpPost httppost = buildPost(path, formparams);
-            lastResponse = httpclient.execute(target, httppost, context);
-            SimplifiedResponse simplifiedResponse = new SimplifiedResponse(lastResponse);
+            SimplifiedResponse simplifiedResponse;
+            requestPost(path, formparams);
+            try
+                {
+                    simplifiedResponse = new SimplifiedResponse(lastResponse);
+                }
+            catch (Exception e)
+                {
+                    e.printStackTrace();
+                    throw new ResponseParseException("Failed to parse post request.", e);// TODO Auto-generated catch block
+                }
             LOG.debug("Request:{} {} Response: {}", new Object[] { "POST", path, simplifiedResponse.getCode() });
             return simplifiedResponse;
         }
 
-    public SimplifiedResponse executePost(final String path, final HashMap<String, String> params) throws ClientProtocolException, IOException
+    private void requestPost(final String path, final List<NameValuePair> formparams) throws RequestException
+        {
+            HttpPost httppost;
+            try
+                {
+                    httppost = buildPost(path, formparams);
+                    lastResponse = httpclient.execute(target, httppost, context);
+                }
+            catch (UnsupportedEncodingException e)
+                {
+                    e.printStackTrace();
+                    throw new RequestException("Failed to build post request", e);
+                }
+            catch (Exception e)
+                {
+                    e.printStackTrace();
+                    throw new RequestException("Failed to execute post request", e);
+                }
+        }
+
+    public SimplifiedResponse executePost(final String path, final HashMap<String, String> params) throws RequestException, ResponseParseException
         {
             List<NameValuePair> formparams = convertHashMapToNameValuePairsList(params);
             return executePost(path, formparams);
@@ -105,23 +150,80 @@ public class HttpSession {
 
         }
 
-
-    public SimplifiedResponse executeSoapPost(final String path, final String soapAction, final String xml) throws ClientProtocolException, IOException
+    public SimplifiedResponse executeSoapPost(final String path, final String soapAction, final String xml) throws RequestException, ResponseParseException
         {
-            final HttpPost httppost = buildPostForSoap(path, soapAction, xml);
-            lastResponse = httpclient.execute(target, httppost, context);
-            SimplifiedResponse simplifiedResponse = new SimplifiedResponse(lastResponse);
+            HttpResponse lastResponse = requestSoapPost(path, soapAction, xml);
+            SimplifiedResponse simplifiedResponse = null;
+            try
+                {
+                    simplifiedResponse = new SimplifiedResponse(lastResponse);
+                }
+            catch (Exception e)
+                {
+                    e.printStackTrace();
+                    LOG.error("unable to parse", e.toString());
+                    throw new ResponseParseException("unable to parse response", e);
+                }
+
             LOG.debug("Request:{} {} Response: {}, {}", new Object[] { "POST", path, simplifiedResponse.getCode(), simplifiedResponse.getBody() });
             return simplifiedResponse;
         }
 
-    public SimplifiedResponse executeGet(final String path) throws ClientProtocolException, IOException
+    private HttpResponse requestSoapPost(final String path, final String soapAction, final String xml) throws RequestException
         {
-            final HttpGet httpget = buildGet(path);
-            lastResponse = httpclient.execute(target, httpget, context);
-            SimplifiedResponse simplifiedResponse = new SimplifiedResponse(lastResponse);
+            HttpResponse lastResponse = null;
+            try
+                {
+                    HttpPost httppost = buildPostForSoap(path, soapAction, xml);
+                    lastResponse = httpclient.execute(target, httppost, context);
+                }
+            catch (UnsupportedEncodingException e)
+                {
+                    e.printStackTrace();
+                    throw new RequestException("", POST, "failed to build request", e);
+                }
+            catch (Exception e)
+                {
+                    e.printStackTrace();
+                    throw new RequestException("", POST, "failed request", e);
+                }
+            return lastResponse;
+        }
+
+    public SimplifiedResponse executeGet(final String path) throws RequestException, ResponseParseException 
+        {
+            HttpResponse lastResponse = requestGet(path);
+            
+            SimplifiedResponse simplifiedResponse;
+            try
+                {
+                    simplifiedResponse = new SimplifiedResponse(lastResponse);
+                }
+            catch (Exception e)
+                {
+                   e.printStackTrace();
+                   throw new ResponseParseException("Failed to parse get response", e);
+                        
+                }
             LOG.debug("Request:{} {} Response: {}", new Object[] { "GET", path, simplifiedResponse.getCode() });
             return simplifiedResponse;
+        }
+
+    private HttpResponse requestGet(final String path) throws RequestException 
+        {
+            HttpResponse lastresponse = null;
+            final HttpGet httpget = buildGet(path);
+            try
+                {
+                    lastresponse= httpclient.execute(target, httpget, context);
+                }
+            catch (Exception e)
+                {
+                    e.printStackTrace();
+                    throw new RequestException("Failed get request.", e);
+                    
+                }
+            return lastresponse;
         }
 
     private HttpGet buildGet(final String path)
@@ -159,7 +261,7 @@ public class HttpSession {
                 }
         }
 
-    private void init(final String serverAddress, final int port, final HttpProtocol protocol ) throws KeyManagementException, NoSuchAlgorithmException
+    private void init(final String serverAddress, final int port, final HttpProtocol protocol) throws KeyManagementException, NoSuchAlgorithmException
         {
             httpclient = new DefaultHttpClient();
 
@@ -257,6 +359,4 @@ public class HttpSession {
             return new DefaultHttpClient(ccm, httpClient.getParams());
         }
 
-
-  
 }
