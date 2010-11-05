@@ -78,13 +78,14 @@ public class HttpSession {
             catch (Exception e)
                 {
                     e.printStackTrace();
-                    throw new SessionStartException("Failed to start http session.", e); 
+                    throw new SessionStartException("Failed to start http session.", e);
                 }
         }
 
-    public HttpSession(final String serverAddress, final int port, final HttpProtocol protocol, BasicHttpContext context) throws SessionStartException {
+    public HttpSession(final String serverAddress, final int port, final HttpProtocol protocol, BasicHttpContext context) throws SessionStartException
+        {
             this.context = context;
-           
+
             try
                 {
                     setTarget(serverAddress, port, protocol);
@@ -92,7 +93,7 @@ public class HttpSession {
             catch (Exception e)
                 {
                     e.printStackTrace();
-                    throw new SessionStartException("Failed to start http session.", e); 
+                    throw new SessionStartException("Failed to start http session.", e);
                 }
         }
 
@@ -107,7 +108,9 @@ public class HttpSession {
             catch (Exception e)
                 {
                     e.printStackTrace();
-                    throw new ResponseParseException("Failed to parse post request.", e);// TODO Auto-generated catch block
+                    throw new ResponseParseException("Failed to parse post request.", e);// TODO
+                    // Auto-generated
+                    // catch block
                 }
             LOG.debug("Request:{} {} Response: {}", new Object[] { "POST", path, simplifiedResponse.getCode() });
             return simplifiedResponse;
@@ -190,10 +193,10 @@ public class HttpSession {
             return lastResponse;
         }
 
-    public SimplifiedResponse executeGet(final String path) throws RequestException, ResponseParseException 
+    public SimplifiedResponse executeGet(final String path) throws RequestException, ResponseParseException
         {
             HttpResponse lastResponse = requestGet(path);
-            
+
             SimplifiedResponse simplifiedResponse;
             try
                 {
@@ -201,27 +204,27 @@ public class HttpSession {
                 }
             catch (Exception e)
                 {
-                   e.printStackTrace();
-                   throw new ResponseParseException("Failed to parse get response", e);
-                        
+                    e.printStackTrace();
+                    throw new ResponseParseException("Failed to parse get response", e);
+
                 }
             LOG.debug("Request:{} {} Response: {}", new Object[] { "GET", path, simplifiedResponse.getCode() });
             return simplifiedResponse;
         }
 
-    private HttpResponse requestGet(final String path) throws RequestException 
+    private HttpResponse requestGet(final String path) throws RequestException
         {
             HttpResponse lastresponse = null;
             final HttpGet httpget = buildGet(path);
             try
                 {
-                    lastresponse= httpclient.execute(target, httpget, context);
+                    lastresponse = httpclient.execute(target, httpget, context);
                 }
             catch (Exception e)
                 {
                     e.printStackTrace();
                     throw new RequestException("Failed get request.", e);
-                    
+
                 }
             return lastresponse;
         }
@@ -261,7 +264,7 @@ public class HttpSession {
                 }
         }
 
-    private void init(final String serverAddress, final int port, final HttpProtocol protocol) throws KeyManagementException, NoSuchAlgorithmException
+    private void init(final String serverAddress, final int port, final HttpProtocol protocol) throws SessionStartException
         {
             httpclient = new DefaultHttpClient();
 
@@ -272,24 +275,20 @@ public class HttpSession {
             setTarget(serverAddress, port, protocol);
         }
 
-    public void setTarget(final String serverAddress, final int port, final HttpProtocol protocol) throws KeyManagementException, NoSuchAlgorithmException
+    public void setTarget(final String serverAddress, final int port, final HttpProtocol protocol) throws SessionStartException
         {
             target = new HttpHost(serverAddress, port, "http");
             if (protocol == HttpProtocol.HTTPS)
                 {
                     target = new HttpHost(serverAddress, port, "https");
-                    httpclient = useTrustingTrustManager(httpclient);
                     try
                         {
+                            httpclient = useTrustingTrustManager(httpclient);
                             Protocol.registerProtocol("https", new Protocol("https", new EasySSLProtocolSocketFactory(), 443));
                         }
-                    catch (final GeneralSecurityException e)
+                    catch (Exception e)
                         {
-                            e.printStackTrace();
-                        }
-                    catch (final IOException e)
-                        {
-                            e.printStackTrace();
+                            throw new SessionStartException("trouble setting up ssl settings");
                         }
                 }
         }
