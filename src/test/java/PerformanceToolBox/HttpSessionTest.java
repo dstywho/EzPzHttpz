@@ -15,6 +15,7 @@ import org.apache.http.HttpResponse;
 import org.apache.http.NameValuePair;
 import org.apache.http.ParseException;
 import org.apache.http.StatusLine;
+import org.apache.http.client.ClientProtocolException;
 import org.apache.http.message.BasicHeader;
 import org.apache.http.message.BasicNameValuePair;
 import org.calgb.test.performance.HttpSession;
@@ -79,14 +80,14 @@ public class HttpSessionTest {
     }
     
     @Test
-    public void getRequestSpec() throws SessionStartException, RequestException, ResponseParseException {
+    public void getRequestSpec() throws SessionStartException, RequestException, ResponseParseException, KeyManagementException, NoSuchAlgorithmException, ClientProtocolException, IOException {
             final HttpSession session = new HttpSession("localhost",PORT, HttpProtocol.HTTP);
             SimplifiedResponse response = session.executeGet("/");
             LOG.debug(response.getBody());
             assertEquals(SimpleServer.MY_RESPONSE,response.getBody());
         }
     @Test
-    public void postRequestSpec() throws SessionStartException, RequestException, ResponseParseException {
+    public void postRequestSpec() throws SessionStartException, RequestException, ResponseParseException, KeyManagementException, NoSuchAlgorithmException, ClientProtocolException, IOException {
             final HttpSession session = new HttpSession("localhost",PORT, HttpProtocol.HTTP);
             List<NameValuePair> params = new ArrayList<NameValuePair>(){{add(new BasicNameValuePair("blah", "val2"));}};
             SimplifiedResponse response = session.executePost("/", params);
