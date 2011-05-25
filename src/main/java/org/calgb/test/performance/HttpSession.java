@@ -77,51 +77,63 @@ public class HttpSession {
 
     private SimplifiedResponse sendPostTransaction(final String path, final HttpPost httppost) throws IOException, ClientProtocolException
         {
-            
+
             lastResponse = httpclient.execute(target, httppost, context);
             SimplifiedResponse simplifiedResponse = new SimplifiedResponse(lastResponse);
             LOG.debug("Request:{} {} Response: {}", new Object[] { "POST", path, simplifiedResponse.getCode() });
             return simplifiedResponse;
         }
-    public SimplifiedResponse executePost(final String path, final List<NameValuePair> formparams, String referer) throws ClientProtocolException, IOException
-    {
-        final HttpPost httppost = buildPost(path, formparams);
-        httppost.addHeader("Referer", referer);
-        return sendPostTransaction(path, httppost);
-    }
-    public SimplifiedResponse executePost(final String path, final List<NameValuePair> formparams, Map<String,String> headers) throws ClientProtocolException, IOException
-    {
-        final HttpPost httppost = buildPost(path, formparams);
-        for(String headerKey: headers.keySet()){
-            httppost.addHeader(headerKey, headers.get(headerKey));
-        }
-        return sendPostTransaction(path, httppost);
+    
+    public SimplifiedResponse executePost(final String path, String content) throws ClientProtocolException, IOException{
+        HttpPost post = buildPost(path,content);
+        return sendPostTransaction(path, post);
     }
 
-    public SimplifiedResponse executePost(final String path, final HashMap<String,String> params) throws ClientProtocolException, IOException
+    public SimplifiedResponse executePost(final String path, final List<NameValuePair> formparams, String referer) throws ClientProtocolException, IOException
+        {
+            final HttpPost httppost = buildPost(path, formparams);
+            httppost.addHeader("Referer", referer);
+            return sendPostTransaction(path, httppost);
+        }
+
+    public SimplifiedResponse executePost(final String path, final List<NameValuePair> formparams, Map<String, String> headers) throws ClientProtocolException, IOException
+        {
+            final HttpPost httppost = buildPost(path, formparams);
+            for (String headerKey : headers.keySet())
+                {
+                    httppost.addHeader(headerKey, headers.get(headerKey));
+                }
+            return sendPostTransaction(path, httppost);
+        }
+
+    public SimplifiedResponse executePost(final String path, final HashMap<String, String> params) throws ClientProtocolException, IOException
         {
             List<NameValuePair> formparams = convertHashMapToNameValuePairsList(params);
             return executePost(path, formparams);
         }
-    public SimplifiedResponse executePost(final String path, final HashMap<String,String> params, String referer) throws ClientProtocolException, IOException
-    {
-        List<NameValuePair> formparams = convertHashMapToNameValuePairsList(params);
-        return executePost(path,formparams,referer);
-    }
-    public SimplifiedResponse executePost(final String path, final HashMap<String,String> params, Map headers) throws ClientProtocolException, IOException
-    {
-        List<NameValuePair> formparams = convertHashMapToNameValuePairsList(params);
-        return executePost(path,formparams,headers);
-    }
-    
-    private List<NameValuePair> convertHashMapToNameValuePairsList(HashMap<String,String> params){
-        ArrayList<NameValuePair> namedValuePairs = new ArrayList<NameValuePair>();
-        for(String paramName : params.keySet()){
-            namedValuePairs.add(new BasicNameValuePair(paramName, params.get(paramName)));
+
+    public SimplifiedResponse executePost(final String path, final HashMap<String, String> params, String referer) throws ClientProtocolException, IOException
+        {
+            List<NameValuePair> formparams = convertHashMapToNameValuePairsList(params);
+            return executePost(path, formparams, referer);
         }
-        return namedValuePairs;
-        
-    }
+
+    public SimplifiedResponse executePost(final String path, final HashMap<String, String> params, Map headers) throws ClientProtocolException, IOException
+        {
+            List<NameValuePair> formparams = convertHashMapToNameValuePairsList(params);
+            return executePost(path, formparams, headers);
+        }
+
+    private List<NameValuePair> convertHashMapToNameValuePairsList(HashMap<String, String> params)
+        {
+            ArrayList<NameValuePair> namedValuePairs = new ArrayList<NameValuePair>();
+            for (String paramName : params.keySet())
+                {
+                    namedValuePairs.add(new BasicNameValuePair(paramName, params.get(paramName)));
+                }
+            return namedValuePairs;
+
+        }
 
     public SimplifiedResponse executeSoapPost(final String path, final String soapAction, final String xml) throws ClientProtocolException, IOException
         {
@@ -153,6 +165,14 @@ public class HttpSession {
     private HttpPost buildPost(final String path, final List<NameValuePair> formparams) throws UnsupportedEncodingException
         {
             final UrlEncodedFormEntity entity1 = new UrlEncodedFormEntity(formparams, "UTF-8");
+            final HttpPost httppost = new HttpPost(path);
+            httppost.setEntity(entity1);
+            return httppost;
+        }
+
+    private HttpPost buildPost(final String path, String content) throws UnsupportedEncodingException
+        {
+            final StringEntity entity1 = new StringEntity(content);
             final HttpPost httppost = new HttpPost(path);
             httppost.setEntity(entity1);
             return httppost;
@@ -270,6 +290,7 @@ public class HttpSession {
             // or, as in this example, create a new one.
             return new DefaultHttpClient(ccm, httpClient.getParams());
         }
+
     public void printCookies()
         {
             LOG.debug("PRINT COOKIES");
