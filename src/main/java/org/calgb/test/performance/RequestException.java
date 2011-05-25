@@ -5,16 +5,40 @@ import org.slf4j.LoggerFactory;
 
 public class RequestException extends Exception {
 
-    public static Logger LOG  = LoggerFactory.getLogger(RequestException.class);
-    public RequestException(String params, String method, String message, Throwable cause)
+    public static enum HTTP_METHODS {
+        GET("GET"), POST("POST"), HEAD("HEAD"), DELETE("DELETE"), PUT("PUT"), TRACE("TRACE"), CONNECT("CONNECT");
+
+        private HTTP_METHODS(String name)
+            {
+                this.name = name;
+            }
+
+        private final String name;
+
+        public String toString()
+            {
+                return name;
+            }
+    }
+
+    public static Logger LOG = LoggerFactory.getLogger(RequestException.class);
+
+    public RequestException(String url, String params, HTTP_METHODS method, String message, Throwable cause)
         {
             super(message, cause);
-            LOG.error("Failed {} request: {}", params);
+            LOG.error("Failed {} request to {}: ({}) {}", new Object[] { method.toString(), url, message, params });
         }
-    public RequestException(String message, Throwable cause)
+
+    public RequestException(String url, String params, HTTP_METHODS method, Throwable cause)
         {
-            super(message, cause);
-            // TODO Auto-generated constructor stub
+            super("unable to use ", cause);
+            LOG.error("Failed {} request to {}: {}", new Object[] { method.toString(), url, params });
+        }
+
+    public RequestException(String url, HTTP_METHODS method, Throwable cause)
+        {
+            super("unable to use ", cause);
+            LOG.error("Failed {} request to {}", new Object[] { method.toString(), url });
         }
 
 }

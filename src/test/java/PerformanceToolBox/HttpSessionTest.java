@@ -18,11 +18,14 @@ import org.apache.http.StatusLine;
 import org.apache.http.client.ClientProtocolException;
 import org.apache.http.message.BasicHeader;
 import org.apache.http.message.BasicNameValuePair;
+import org.calgb.test.performance.BuildPostException;
 import org.calgb.test.performance.HttpSession;
+import org.calgb.test.performance.ProcessResponseBodyException;
 import org.calgb.test.performance.RequestException;
 import org.calgb.test.performance.ResponseParseException;
 import org.calgb.test.performance.SessionStartException;
 import org.calgb.test.performance.SimplifiedResponse;
+import org.calgb.test.performance.UseSslException;
 import org.calgb.test.performance.HttpSession.HttpProtocol;
 import org.easymock.EasyMock;
 import org.junit.After;
@@ -80,14 +83,14 @@ public class HttpSessionTest {
     }
     
     @Test
-    public void getRequestSpec() throws SessionStartException, RequestException, ResponseParseException, KeyManagementException, NoSuchAlgorithmException, ClientProtocolException, IOException {
+    public void getRequestSpec() throws UseSslException, RequestException, ProcessResponseBodyException   {
             final HttpSession session = new HttpSession("localhost",PORT, HttpProtocol.HTTP);
             SimplifiedResponse response = session.executeGet("/");
             LOG.debug(response.getBody());
             assertEquals(SimpleServer.MY_RESPONSE,response.getBody());
         }
     @Test
-    public void postRequestSpec() throws SessionStartException, RequestException, ResponseParseException, KeyManagementException, NoSuchAlgorithmException, ClientProtocolException, IOException {
+    public void postRequestSpec() throws SessionStartException, RequestException, ResponseParseException, KeyManagementException, NoSuchAlgorithmException, ClientProtocolException, IOException, UseSslException, BuildPostException, ProcessResponseBodyException {
             final HttpSession session = new HttpSession("localhost",PORT, HttpProtocol.HTTP);
             List<NameValuePair> params = new ArrayList<NameValuePair>(){{add(new BasicNameValuePair("blah", "val2"));}};
             SimplifiedResponse response = session.executePost("/", params);

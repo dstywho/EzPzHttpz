@@ -9,6 +9,7 @@ import org.apache.http.HttpResponse;
 import org.apache.http.ParseException;
 import org.apache.http.StatusLine;
 import org.apache.http.message.BasicHeader;
+import org.calgb.test.performance.ProcessResponseBodyException;
 import org.calgb.test.performance.SimplifiedResponse;
 import org.easymock.EasyMock;
 import org.junit.Assert;
@@ -21,7 +22,7 @@ public class SimplifiedResponseTest {
     private static final String SERVER_ERROR = "SERVER ERROR";
 
     @Test
-    public void test() throws ParseException, IOException
+    public void test() throws ParseException, IOException, ProcessResponseBodyException
         {
             HttpResponse mockHttpResponse = EasyMock.createMock(HttpResponse.class);
             org.apache.http.StatusLine mockStatusLine = EasyMock.createMock(StatusLine.class);

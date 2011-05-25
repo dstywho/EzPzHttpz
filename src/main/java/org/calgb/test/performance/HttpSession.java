@@ -17,6 +17,7 @@ import javax.net.ssl.TrustManager;
 import javax.net.ssl.X509TrustManager;
 
 import org.apache.commons.httpclient.contrib.ssl.EasySSLProtocolSocketFactory;
+import org.apache.commons.httpclient.protocol.DefaultProtocolSocketFactory;
 import org.apache.commons.httpclient.protocol.Protocol;
 import org.apache.http.HttpHost;
 import org.apache.http.HttpResponse;
@@ -45,6 +46,7 @@ import org.apache.http.params.BasicHttpParams;
 import org.apache.http.params.HttpParams;
 import org.apache.http.protocol.BasicHttpContext;
 import org.apache.http.util.EntityUtils;
+import org.calgb.test.performance.RequestException.HTTP_METHODS;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -64,39 +66,47 @@ public class HttpSession {
         HTTP, HTTPS
     };
 
-    public HttpSession(final String serverAddress, final int port, final HttpProtocol protocol) throws KeyManagementException, NoSuchAlgorithmException
+    public HttpSession(final String serverAddress, final int port, final HttpProtocol protocol) throws UseSslException
         {
             init(serverAddress, port, protocol);
         }
 
-    public SimplifiedResponse executePost(final String path, final List<NameValuePair> formparams) throws ClientProtocolException, IOException
+    public SimplifiedResponse executePost(final String path, final List<NameValuePair> formparams) throws BuildPostException, ProcessResponseBodyException, RequestException
         {
             final HttpPost httppost = buildPost(path, formparams);
             return sendPostTransaction(path, httppost);
         }
 
-    private SimplifiedResponse sendPostTransaction(final String path, final HttpPost httppost) throws IOException, ClientProtocolException
+    private SimplifiedResponse sendPostTransaction(final String path, final HttpPost httppost) throws ProcessResponseBodyException, RequestException 
         {
 
-            lastResponse = httpclient.execute(target, httppost, context);
+            try
+                {
+                    lastResponse = httpclient.execute(target, httppost, context);
+                }
+            catch (Exception e)
+                {
+                    throw new RequestException(path, HTTP_METHODS.POST, e);
+                }
+
             SimplifiedResponse simplifiedResponse = new SimplifiedResponse(lastResponse);
             LOG.debug("Request:{} {} Response: {}", new Object[] { "POST", path, simplifiedResponse.getCode() });
             return simplifiedResponse;
         }
-    
-    public SimplifiedResponse executePost(final String path, String content) throws ClientProtocolException, IOException{
-        HttpPost post = buildPost(path,content);
-        return sendPostTransaction(path, post);
-    }
 
-    public SimplifiedResponse executePost(final String path, final List<NameValuePair> formparams, String referer) throws ClientProtocolException, IOException
+    public SimplifiedResponse executePost(final String path, String content) throws BuildPostException, ProcessResponseBodyException, RequestException
         {
+            HttpPost post = buildPost(path, content);
+            return sendPostTransaction(path, post);
+        }
+
+    public SimplifiedResponse executePost(final String path, final List<NameValuePair> formparams, String referer) throws BuildPostException, ProcessResponseBodyException, RequestException {
             final HttpPost httppost = buildPost(path, formparams);
             httppost.addHeader("Referer", referer);
             return sendPostTransaction(path, httppost);
         }
 
-    public SimplifiedResponse executePost(final String path, final List<NameValuePair> formparams, Map<String, String> headers) throws ClientProtocolException, IOException
+    public SimplifiedResponse executePost(final String path, final List<NameValuePair> formparams, Map<String, String> headers) throws BuildPostException, ProcessResponseBodyException, RequestException 
         {
             final HttpPost httppost = buildPost(path, formparams);
             for (String headerKey : headers.keySet())
@@ -106,19 +116,19 @@ public class HttpSession {
             return sendPostTransaction(path, httppost);
         }
 
-    public SimplifiedResponse executePost(final String path, final HashMap<String, String> params) throws ClientProtocolException, IOException
+    public SimplifiedResponse executePost(final String path, final HashMap<String, String> params) throws BuildPostException, ProcessResponseBodyException, RequestException 
         {
             List<NameValuePair> formparams = convertHashMapToNameValuePairsList(params);
             return executePost(path, formparams);
         }
 
-    public SimplifiedResponse executePost(final String path, final HashMap<String, String> params, String referer) throws ClientProtocolException, IOException
+    public SimplifiedResponse executePost(final String path, final HashMap<String, String> params, String referer) throws BuildPostException, ProcessResponseBodyException, RequestException 
         {
             List<NameValuePair> formparams = convertHashMapToNameValuePairsList(params);
             return executePost(path, formparams, referer);
         }
 
-    public SimplifiedResponse executePost(final String path, final HashMap<String, String> params, Map headers) throws ClientProtocolException, IOException
+    public SimplifiedResponse executePost(final String path, final HashMap<String, String> params, Map headers) throws BuildPostException, ProcessResponseBodyException, RequestException 
         {
             List<NameValuePair> formparams = convertHashMapToNameValuePairsList(params);
             return executePost(path, formparams, headers);
@@ -135,19 +145,25 @@ public class HttpSession {
 
         }
 
-    public SimplifiedResponse executeSoapPost(final String path, final String soapAction, final String xml) throws ClientProtocolException, IOException
+    public SimplifiedResponse executeSoapPost(final String path, final String soapAction, final String xml) throws BuildPostException, ProcessResponseBodyException, RequestException  
         {
             final HttpPost httppost = buildPostForSoap(path, soapAction, xml);
-            lastResponse = httpclient.execute(target, httppost, context);
-            SimplifiedResponse simplifiedResponse = new SimplifiedResponse(lastResponse);
-            LOG.debug("Request:{} {} Response: {}, {}", new Object[] { "POST", path, simplifiedResponse.getCode(), simplifiedResponse.getBody() });
-            return simplifiedResponse;
+            SimplifiedResponse response = sendPostTransaction(path, httppost);
+            LOG.debug("Request:{} {} Response: {}, {}", new Object[] { "POST", path, response.getCode(), response.getBody() });
+            return response;
         }
 
-    public SimplifiedResponse executeGet(final String path) throws ClientProtocolException, IOException
+    public SimplifiedResponse executeGet(final String path) throws RequestException, ProcessResponseBodyException
         {
             final HttpGet httpget = buildGet(path);
-            lastResponse = httpclient.execute(target, httpget, context);
+            try
+                {
+                    lastResponse = httpclient.execute(target, httpget, context);
+                }
+            catch (Exception e)
+                {
+                    throw new RequestException(path, HTTP_METHODS.GET, e);
+                }
             SimplifiedResponse simplifiedResponse = new SimplifiedResponse(lastResponse);
             LOG.debug("Request:{} {} Response: {}", new Object[] { "GET", path, simplifiedResponse.getCode() });
             return simplifiedResponse;
@@ -162,28 +178,52 @@ public class HttpSession {
             return httpget;
         }
 
-    private HttpPost buildPost(final String path, final List<NameValuePair> formparams) throws UnsupportedEncodingException
+    private HttpPost buildPost(final String path, final List<NameValuePair> formparams) throws BuildPostException
         {
-            final UrlEncodedFormEntity entity1 = new UrlEncodedFormEntity(formparams, "UTF-8");
+            UrlEncodedFormEntity entity1;
+            try
+                {
+                    entity1 = new UrlEncodedFormEntity(formparams, "UTF-8");
+                }
+            catch (UnsupportedEncodingException e)
+                {
+                    throw new BuildPostException(e);
+                }
             final HttpPost httppost = new HttpPost(path);
             httppost.setEntity(entity1);
             return httppost;
         }
 
-    private HttpPost buildPost(final String path, String content) throws UnsupportedEncodingException
+    private HttpPost buildPost(final String path, String content) throws BuildPostException
         {
-            final StringEntity entity1 = new StringEntity(content);
+            StringEntity entity1;
+            try
+                {
+                    entity1 = new StringEntity(content);
+                }
+            catch (UnsupportedEncodingException e)
+                {
+                    throw new BuildPostException(e);
+                }
             final HttpPost httppost = new HttpPost(path);
             httppost.setEntity(entity1);
             return httppost;
         }
 
-    private HttpPost buildPostForSoap(final String path, final String soapAction, final String xml) throws UnsupportedEncodingException
+    private HttpPost buildPostForSoap(final String path, final String soapAction, final String xml) throws BuildPostException
         {
             final HttpPost httppost = new HttpPost(path);
             httppost.setHeader(new BasicHeader("Content-Type", "text/xml;charset=UTF-8"));
             httppost.setHeader(new BasicHeader("SOAPAction", soapAction));
-            final StringEntity entity = new StringEntity(xml, "UTF-8");
+            StringEntity entity;
+            try
+                {
+                    entity = new StringEntity(xml, "UTF-8");
+                }
+            catch (UnsupportedEncodingException e)
+                {
+                    throw new BuildPostException(e);
+                }
             httppost.setEntity(entity);
             return httppost;
         }
@@ -196,7 +236,7 @@ public class HttpSession {
                 }
         }
 
-    private void init(final String serverAddress, final int port, final HttpProtocol protocol) throws KeyManagementException, NoSuchAlgorithmException
+    private void init(final String serverAddress, final int port, final HttpProtocol protocol) throws UseSslException
         {
             httpclient = new DefaultHttpClient();
 
@@ -217,18 +257,19 @@ public class HttpSession {
             if (protocol == HttpProtocol.HTTPS)
                 {
                     target = new HttpHost(serverAddress, port, "https");
-                    httpclient = useTrustingTrustManager(httpclient);
                     try
                         {
-                            Protocol.registerProtocol("https", new Protocol("https", new EasySSLProtocolSocketFactory(), 443));
+                            httpclient = useTrustingTrustManager(httpclient, port);
+                            // Protocol.registerProtocol("https", new Protocol("https", new
+                            // DefaultProtocolSocketFactory(), 443));
+                            // we may need this but the constructor used is deprecated
+                            // Protocol.registerProtocol("https", new Protocol("https", new
+                            // org.apache.commons.httpclient.contrib.ssl.EasySSLProtocolSocketFactory(),
+                            // 443));
                         }
-                    catch (final GeneralSecurityException e)
+                    catch (Exception e)
                         {
-                            e.printStackTrace();
-                        }
-                    catch (final IOException e)
-                        {
-                            e.printStackTrace();
+                            throw new UseSslException(e);
                         }
                 }
         }
@@ -243,7 +284,7 @@ public class HttpSession {
             context.setAttribute(ClientContext.COOKIE_STORE, store);
         }
 
-    private DefaultHttpClient useTrustingTrustManager(final DefaultHttpClient httpClient) throws KeyManagementException, NoSuchAlgorithmException
+    private DefaultHttpClient useTrustingTrustManager(final DefaultHttpClient httpClient, int port) throws KeyManagementException, NoSuchAlgorithmException
         {
             // First create a trust manager that won't care.
             final X509TrustManager trustManager = new X509TrustManager()
@@ -284,7 +325,7 @@ public class HttpSession {
 
             // Register our new socket factory with the typical SSL port and the
             // correct protocol name.
-            schemeRegistry.register(new Scheme("https", sf, 443));
+            schemeRegistry.register(new Scheme("https", sf, port));
 
             // Finally, apply the ClientConnectionManager to the Http Client
             // or, as in this example, create a new one.
@@ -303,11 +344,11 @@ public class HttpSession {
                 }
         }
 
-    public static void main(final String[] args) throws ClientProtocolException, IOException, KeyManagementException, NoSuchAlgorithmException
+    public static void main(final String[] args) throws UseSslException, RequestException, ProcessResponseBodyException, BuildPostException 
         {
             // PropertyConfigurator.configure("src/log4j.properties");
 
-            final HttpSession client = new HttpSession("calgbvsdev4", 80, HttpProtocol.HTTPS);
+            final HttpSession client = new HttpSession("www.test.calgbapps.org", 443, HttpProtocol.HTTPS);
             SimplifiedResponse response = client.executeGet("/Open/services/RandoNode?wsdl");
             response.getCode();
 
