@@ -25,19 +25,15 @@ public class RequestException extends Exception {
 
     public RequestException(String url, String params, HTTP_METHODS method, String message, Throwable cause)
         {
-            super(message, cause);
             LOG.error("Failed {} request to {}: ({}) {}", new Object[] { method.toString(), url, message, params });
         }
 
     public RequestException(String url, String params, HTTP_METHODS method, Throwable cause)
         {
-            super("unable to use ", cause);
             LOG.error("Failed {} request to {}: {}", new Object[] { method.toString(), url, params });
         }
 
     public RequestException(String url, HTTP_METHODS method, Throwable cause)
-        {
-            super("unable to use ", cause);
             LOG.error("Failed {} request to {}", new Object[] { method.toString(), url });
         }
 
