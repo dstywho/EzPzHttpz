@@ -1,9 +1,6 @@
 package org.calgb.test.performance;
 
-import java.io.IOException;
-
 import org.apache.http.HttpResponse;
-import org.apache.http.ParseException;
 import org.apache.http.StatusLine;
 import org.apache.http.util.EntityUtils;
 
@@ -19,28 +16,28 @@ public class SimplifiedResponse {
             return response;
         }
 
-    public void setResponse(org.apache.http.HttpResponse response)
+    public void setResponse(final org.apache.http.HttpResponse response)
         {
             this.response = response;
         }
 
-    public SimplifiedResponse(HttpResponse response) throws ProcessResponseBodyException
+    public SimplifiedResponse(final HttpResponse response) throws ProcessResponseBodyException
         {
-            StatusLine statusLine = response.getStatusLine();
+            final StatusLine statusLine = response.getStatusLine();
             code = statusLine.getStatusCode();
             message = statusLine.getReasonPhrase();
             try
                 {
                     body = EntityUtils.toString(response.getEntity());
                 }
-            catch (Exception e)
+            catch (final Exception e)
                 {
                     throw new ProcessResponseBodyException(e);
                 }
 
         }
 
-    public SimplifiedResponse(int code, String message, String body, org.apache.http.HttpResponse response)
+    public SimplifiedResponse(final int code, final String message, final String body, final org.apache.http.HttpResponse response)
         {
             super();
             this.message = message;
@@ -54,7 +51,7 @@ public class SimplifiedResponse {
             return message;
         }
 
-    public void setMessage(String message)
+    public void setMessage(final String message)
         {
             this.message = message;
         }
@@ -64,7 +61,7 @@ public class SimplifiedResponse {
             return body;
         }
 
-    public void setBody(String body)
+    public void setBody(final String body)
         {
             this.body = body;
         }
@@ -74,7 +71,7 @@ public class SimplifiedResponse {
             return code;
         }
 
-    public void setCode(int code)
+    public void setCode(final int code)
         {
             this.code = code;
         }

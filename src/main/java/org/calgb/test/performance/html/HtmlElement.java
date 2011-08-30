@@ -1,15 +1,13 @@
 package org.calgb.test.performance.html;
 
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
-import java.util.Vector;
 
 public class HtmlElement {
-    private String tagName;
-    private String html;
+    private final String tagName;
+    private final String html;
 
-    public HtmlElement(String html)
+    public HtmlElement(final String html)
         {
             tagName = "html";
             this.html = html;
@@ -17,20 +15,20 @@ public class HtmlElement {
 
     public HtmlElement(final String tagname, final String innerHtml)
         {
-            this.tagName = tagname;
-            this.html = innerHtml;
+            tagName = tagname;
+            html = innerHtml;
         }
 
     public HashMap<String, String> getAttr()
         {
-            RegexMatch matcher = new RegexMatch(html);
-            String openTag = getOpenningTag(matcher);
+            final RegexMatch matcher = new RegexMatch(html);
+            final String openTag = getOpenningTag(matcher);
             return getAttributesFromTag(openTag);
         }
 
-    private HashMap<String, String> getAttributesFromTag(String openTag)
+    private HashMap<String, String> getAttributesFromTag(final String openTag)
         {
-            String attributesOnly = openTag.replaceAll("(<" + tagName + ")|(\\/*>$)|\\\"", "");
+            final String attributesOnly = openTag.replaceAll("(<" + tagName + ")|(\\/*>$)|\\\"", "");
             final String[] tagPairs = attributesOnly.split("\\s");
 
             final HashMap<String, String> attrPairs = new HashMap<String, String>();
@@ -45,9 +43,9 @@ public class HtmlElement {
             return attrPairs;
         }
 
-    private String getOpenningTag(RegexMatch matcher)
+    private String getOpenningTag(final RegexMatch matcher)
         {
-            String openTag = matcher.find("<" + tagName + ".*?>").get(0).getText();
+            final String openTag = matcher.find("<" + tagName + ".*?>").get(0).getText();
             return openTag;
         }
 
@@ -56,20 +54,20 @@ public class HtmlElement {
             return html;
         }
 
-    public HtmlElementList find(String tagName)
+    public HtmlElementList find(final String tagName)
         {
-            List<RegexMatch> elems = getRegExpMatchesByTagName(tagName);
+            final List<RegexMatch> elems = getRegExpMatchesByTagName(tagName);
             return buildHtmlElements(tagName, elems);
         }
 
-    public HtmlElement findById(String tagName, String id)
+    public HtmlElement findById(final String tagName, final String id)
         {
             return find(tagName, "id", id).get(0);
         }
 
-    private List<RegexMatch> getRegExpMatchesByTagName(String tagName)
+    private List<RegexMatch> getRegExpMatchesByTagName(final String tagName)
         {
-            List<RegexMatch> elems = new RegexMatch(html.replaceAll("\\n|\\r", "")).find("<" + tagName + ".*?>.*?<\\/" + tagName + ">");
+            final List<RegexMatch> elems = new RegexMatch(html.replaceAll("\\n|\\r", "")).find("<" + tagName + ".*?>.*?<\\/" + tagName + ">");
             return elems;
         }
 
@@ -81,7 +79,7 @@ public class HtmlElement {
 
     private HtmlElementList buildHtmlElements(final String tagName, final List<RegexMatch> matches)
         {
-            HtmlElementList elementList = new HtmlElementList();
+            final HtmlElementList elementList = new HtmlElementList();
             for (final RegexMatch match : matches)
                 {
                     elementList.add(new HtmlElement(tagName, match.getText()));

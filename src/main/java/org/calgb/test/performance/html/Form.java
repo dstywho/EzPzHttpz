@@ -5,20 +5,20 @@ import java.util.List;
 
 public class Form extends HtmlElement {
 
-    public Form(String tagname, String innerHtml)
+    public Form(final String tagname, final String innerHtml)
         {
             super(tagname, innerHtml);
         }
 
     public HashMap<String, String> getParameters()
         {
-            List<HtmlElement> inputs = find("input");
-            HashMap<String, String> params = new HashMap<String, String>();
-            for (HtmlElement input : inputs)
+            final List<HtmlElement> inputs = find("input");
+            final HashMap<String, String> params = new HashMap<String, String>();
+            for (final HtmlElement input : inputs)
                 {
-                    HashMap<String, String> attributes = input.getAttr();
-                    String paramName = attributes.get("name");
-                    String paramValue = attributes.get("value");
+                    final HashMap<String, String> attributes = input.getAttr();
+                    final String paramName = attributes.get("name");
+                    final String paramValue = attributes.get("value");
 
                     if (paramName == null)
                         {
@@ -32,7 +32,7 @@ public class Form extends HtmlElement {
                         {
                             params.put(paramName, paramValue);
                         }
-                    
+
                 }
             return params;
         }
