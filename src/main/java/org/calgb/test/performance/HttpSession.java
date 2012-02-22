@@ -55,7 +55,7 @@ public class HttpSession {
      */
     private HttpResponse        lastResponse;
 
-    public enum HttpProtocol {
+    public static enum HttpProtocol {
         HTTP, HTTPS
     };
 
@@ -155,15 +155,16 @@ public class HttpSession {
     public SimplifiedResponse executeGet(final String path) throws RequestException, ProcessResponseBodyException
         {
             final HttpGet httpget = buildGet(path);
+            HttpResponse response;
             try
                 {
-                    lastResponse = httpclient.execute(target, httpget, context);
+                    response = httpclient.execute(target, httpget, context);
                 }
             catch (final Exception e)
                 {
                     throw new RequestException(path, HTTP_METHODS.GET, e);
                 }
-            final SimplifiedResponse simplifiedResponse = new SimplifiedResponse(lastResponse);
+            final SimplifiedResponse simplifiedResponse = new SimplifiedResponse(response);
             LOG.debug("Request:{} {} Response: {}", new Object[] { "GET", path, simplifiedResponse.getCode() });
             return simplifiedResponse;
         }
