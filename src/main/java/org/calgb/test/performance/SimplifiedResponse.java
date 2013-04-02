@@ -76,6 +76,18 @@ public class SimplifiedResponse {
             this.code = code;
         }
 
+    public void closeResponse()
+        {
+            try
+                {
+                    this.response.getEntity().consumeContent();
+                }
+            catch (Exception e)
+                {
+                    throw new RuntimeException(e);
+                }
+        }
+
     public void print()
         {
             System.out.println("----------START RESPOSNE----------");

@@ -162,6 +162,7 @@ public class HttpSession {
                 }
             catch (final Exception e)
                 {
+                    e.printStackTrace();
                     throw new RequestException(path, HTTP_METHODS.GET, e);
                 }
             final SimplifiedResponse simplifiedResponse = new SimplifiedResponse(response);
