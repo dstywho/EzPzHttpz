@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<metadata>
+  <groupId>org.calgb.test</groupId>
+  <artifactId>PerformanceToolBox</artifactId>
+  <versioning>
+    <versions>
+      <version>1.0-SNAPSHOT</version>
+    </versions>
+    <lastUpdated>20130402190948</lastUpdated>
+  </versioning>
+</metadata>
