@@ -1,5 +1,7 @@
 package org.calgb.test.performance;
 
+import java.io.IOException;
+
 import org.apache.http.HttpResponse;
 import org.apache.http.StatusLine;
 import org.apache.http.util.EntityUtils;
@@ -88,6 +90,16 @@ public class SimplifiedResponse {
                 }
         }
 
+    public void close(){
+        try
+            {
+                getResponse().getEntity().consumeContent();
+            }
+        catch (IOException e)
+            {
+                throw new RuntimeException(e);
+            }
+    }
     public void print()
         {
             System.out.println("----------START RESPOSNE----------");

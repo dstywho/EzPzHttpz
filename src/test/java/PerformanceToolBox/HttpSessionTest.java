@@ -1,30 +1,20 @@
 package PerformanceToolBox;
 
-import java.io.IOException;
-import java.security.KeyManagementException;
-import java.security.NoSuchAlgorithmException;
-import java.util.ArrayList;
-import java.util.List;
+import static org.junit.Assert.assertEquals;
 
-import org.apache.http.NameValuePair;
-import org.apache.http.client.ClientProtocolException;
-import org.apache.http.message.BasicNameValuePair;
-import org.calgb.test.performance.BuildPostException;
+import java.io.IOException;
+
 import org.calgb.test.performance.HttpSession;
+import org.calgb.test.performance.HttpSession.HttpProtocol;
 import org.calgb.test.performance.ProcessResponseBodyException;
 import org.calgb.test.performance.RequestException;
-import org.calgb.test.performance.ResponseParseException;
-import org.calgb.test.performance.SessionStartException;
 import org.calgb.test.performance.SimplifiedResponse;
 import org.calgb.test.performance.UseSslException;
-import org.calgb.test.performance.HttpSession.HttpProtocol;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import static org.junit.Assert.assertEquals;
 
 public class HttpSessionTest {
     private static final Logger LOG  = LoggerFactory.getLogger(HttpSessionTest.class);
@@ -86,25 +76,25 @@ public class HttpSessionTest {
             LOG.debug(response.getBody());
             assertEquals(SimpleServer.MY_RESPONSE, response.getBody());
         }
-
-    @Test
-    public void postRequestSpec() throws SessionStartException, RequestException, ResponseParseException, KeyManagementException, NoSuchAlgorithmException,
-            ClientProtocolException, IOException, UseSslException, BuildPostException, ProcessResponseBodyException
-        {
-            final HttpSession session = new HttpSession("localhost", PORT, HttpProtocol.HTTP);
-            final List<NameValuePair> params = new ArrayList<NameValuePair>()
-                {
-                    /**
-                 * 
-                 */
-                    private static final long serialVersionUID = 1L;
-
-                        {
-                            add(new BasicNameValuePair("blah", "val2"));
-                        }
-                };
-            final SimplifiedResponse response = session.executePost("/", params);
-
-            assertEquals(SimpleServer.MY_RESPONSE, response.getBody());
-        }
+//
+//    @Test
+//    public void postRequestSpec() throws SessionStartException, RequestException, ResponseParseException, KeyManagementException, NoSuchAlgorithmException,
+//            ClientProtocolException, IOException, UseSslException, BuildPostException, ProcessResponseBodyException
+//        {
+//            final HttpSession session = new HttpSession("localhost", PORT, HttpProtocol.HTTP);
+//            final List<NameValuePair> params = new ArrayList<NameValuePair>()
+//                {
+//                    /**
+//                 * 
+//                 */
+//                    private static final long serialVersionUID = 1L;
+//
+//                        {
+//                            add(new BasicNameValuePair("blah", "val2"));
+//                        }
+//                };
+//            final SimplifiedResponse response = session.executePost("/", params);
+//
+//            assertEquals(SimpleServer.MY_RESPONSE, response.getBody());
+//        }
 }

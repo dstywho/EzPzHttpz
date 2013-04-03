@@ -4,6 +4,7 @@ import java.util.HashMap;
 
 import org.calgb.test.performance.BuildPostException;
 import org.calgb.test.performance.HttpSession;
+import org.calgb.test.performance.PostRequestFactory;
 import org.calgb.test.performance.ProcessResponseBodyException;
 import org.calgb.test.performance.RequestException;
 import org.calgb.test.performance.SimplifiedResponse;
@@ -32,9 +33,7 @@ public class OpenSsoAuthenticator {
         Form form = getForm(session);
         String action_url = getFormAction(form);
         HashMap<String, String> params = createFormParameters(form, username, password);
-        SimplifiedResponse response = session.executePost(action_url, params);
-        
-        
+        session.sendTransaction(new PostRequestFactory().buildPost(action_url, params));
     }
     
     private Form getForm(HttpSession session) throws RequestException, ProcessResponseBodyException
