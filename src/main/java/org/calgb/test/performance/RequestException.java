@@ -42,6 +42,7 @@ public class RequestException extends Exception {
     public RequestException(final String url, final HTTP_METHODS method, final Throwable cause)
         {
             LOG.error("Failed {} request to {}", new Object[] { method.toString(), url });
+            LOG.error(cause.getMessage());
         }
 
 }
