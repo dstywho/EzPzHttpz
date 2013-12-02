@@ -1,5 +1,8 @@
 package org.calgb.test.performance;
 
+import java.io.PrintWriter;
+import java.io.StringWriter;
+import java.io.Writer;
 import java.security.KeyManagementException;
 import java.security.NoSuchAlgorithmException;
 import java.security.cert.CertificateException;
@@ -19,6 +22,7 @@ import org.apache.http.client.methods.HttpGet;
 import org.apache.http.client.methods.HttpRequestBase;
 import org.apache.http.client.protocol.ClientContext;
 import org.apache.http.conn.ClientConnectionManager;
+import org.apache.http.conn.scheme.PlainSocketFactory;
 import org.apache.http.conn.scheme.Scheme;
 import org.apache.http.conn.scheme.SchemeRegistry;
 import org.apache.http.conn.ssl.SSLSocketFactory;
@@ -27,6 +31,7 @@ import org.apache.http.impl.auth.BasicScheme;
 import org.apache.http.impl.client.BasicAuthCache;
 import org.apache.http.impl.client.BasicCookieStore;
 import org.apache.http.impl.client.DefaultHttpClient;
+import org.apache.http.impl.conn.tsccm.ThreadSafeClientConnManager;
 import org.apache.http.impl.cookie.BasicClientCookie2;
 import org.apache.http.protocol.BasicHttpContext;
 import org.calgb.test.performance.RequestException.HTTP_METHODS;
@@ -69,6 +74,11 @@ public class HttpSession {
                 }
             catch (final Exception e)
                 {
+                    Writer writer = new StringWriter();
+                    PrintWriter printWriter = new PrintWriter(writer);
+                    e.printStackTrace(printWriter);
+                    LOG.error("REQUEST EXCEPTION");
+                    LOG.error(writer.toString());
                     throw new RequestException(request.getURI().getPath(), HTTP_METHODS.POST, e);
                 }
 
@@ -98,28 +108,83 @@ public class HttpSession {
             context = new BasicHttpContext();
             cookieStore = new BasicCookieStore();
             context.setAttribute(ClientContext.COOKIE_STORE, cookieStore);
+            
 
-            // create target
-            target = new HttpHost(serverAddress, port, "http");
-            if (protocol == HttpProtocol.HTTPS)
-                {
-                    target = new HttpHost(serverAddress, port, "https");
-                    try
-                        {
-                            httpclient = useTrustingTrustManager(httpclient, port);
-                            // Protocol.registerProtocol("https", new Protocol("https", new
-                            // DefaultProtocolSocketFactory(), 443));
-                            // we may need this but the constructor used is deprecated
-                            // Protocol.registerProtocol("https", new Protocol("https", new
-                            // org.apache.commons.httpclient.contrib.ssl.EasySSLProtocolSocketFactory(),
-                            // 443));
-                        }
-                    catch (final Exception e)
-                        {
-                            throw new UseSslException(e);
-                        }
-                }
+            target = createHttpHost(protocol, port, serverAddress);
+            
+            try{
+                httpclient = createHttpClient(protocol, port);
+            }
+            catch (final Exception e){
+                throw new UseSslException(e);
+            }
         }
+    
+    private HttpHost createHttpHost(HttpProtocol protocol, int port, String hostname){
+        if(protocol == protocol.HTTP)
+            return  new HttpHost(hostname, port, "http" );
+        else 
+            return  new HttpHost(hostname, port, "https" );
+        
+    }
+    
+    private DefaultHttpClient createHttpClient(HttpProtocol protocol, int port) throws KeyManagementException, NoSuchAlgorithmException{
+        Scheme scheme = createScheme(protocol, port);
+        SchemeRegistry registry = new SchemeRegistry();
+        registry.register(scheme);
+        ClientConnectionManager cm = new ThreadSafeClientConnManager(registry);
+        return new DefaultHttpClient(cm);
+    }
+    
+    private Scheme createScheme(HttpProtocol protocol, int port) throws KeyManagementException, NoSuchAlgorithmException{
+        if(protocol == HttpProtocol.HTTPS){
+            return createHttpsScheme(port);
+        }else{
+            return createHttpScheme(port);
+        }
+    }
+
+    private Scheme createHttpScheme(int port)
+        {
+            return new Scheme("http", port, PlainSocketFactory.getSocketFactory());
+        }
+    
+    private Scheme createHttpsScheme(int port) throws KeyManagementException, NoSuchAlgorithmException{
+        SchemeRegistry registry = new SchemeRegistry();
+        return new Scheme("https", port, createAllTrustingSslSocketFactory());
+    }
+    
+    
+    private SSLSocketFactory createAllTrustingSslSocketFactory() throws KeyManagementException, NoSuchAlgorithmException{
+        final X509TrustManager trustManager = new X509TrustManager()
+            {
+                public void checkClientTrusted(final X509Certificate[] chain, final String authType) throws CertificateException
+                    {
+                        // Don't do anything.
+                    }
+
+                public void checkServerTrusted(final X509Certificate[] chain, final String authType) throws CertificateException
+                    {
+                        // Don't do anything.
+                    }
+
+                public X509Certificate[] getAcceptedIssuers()
+                    {
+                        // Don't do anything.
+                        return null;
+                    }
+            };
+
+        // Now put the trust manager into an SSLContext.
+        final SSLContext sslcontext = SSLContext.getInstance("TLS");
+        sslcontext.init(null, new TrustManager[] { trustManager }, null);
+
+        // Use the above SSLContext to create your socket factory
+        // (I found trying to extend the factory a bit difficult due to a
+        // call to createSocket with no arguments, a method which doesn't
+        // exist anywhere I can find, but hey-ho).
+        return new SSLSocketFactory(sslcontext);
+    }
 
     public void addCookie(final String domain, final String name, final String value, final String path)
         {
