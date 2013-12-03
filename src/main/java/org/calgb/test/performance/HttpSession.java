@@ -150,7 +150,7 @@ public class HttpSession {
         }
     
     private Scheme createHttpsScheme(int port) throws KeyManagementException, NoSuchAlgorithmException{
-        SchemeRegistry registry = new SchemeRegistry();
+        
         return new Scheme("https", port, createAllTrustingSslSocketFactory());
     }
     
@@ -179,11 +179,7 @@ public class HttpSession {
         final SSLContext sslcontext = SSLContext.getInstance("TLS");
         sslcontext.init(null, new TrustManager[] { trustManager }, null);
 
-        // Use the above SSLContext to create your socket factory
-        // (I found trying to extend the factory a bit difficult due to a
-        // call to createSocket with no arguments, a method which doesn't
-        // exist anywhere I can find, but hey-ho).
-        return new SSLSocketFactory(sslcontext);
+        return new SSLSocketFactory(sslcontext, SSLSocketFactory.ALLOW_ALL_HOSTNAME_VERIFIER);
     }
 
     public void addCookie(final String domain, final String name, final String value, final String path)
