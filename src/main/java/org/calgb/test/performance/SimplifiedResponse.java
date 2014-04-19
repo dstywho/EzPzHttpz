@@ -25,6 +25,7 @@ public class SimplifiedResponse {
 
     public SimplifiedResponse(final HttpResponse response) throws ProcessResponseBodyException
         {
+            this.response = response;
             final StatusLine statusLine = response.getStatusLine();
             code = statusLine.getStatusCode();
             message = statusLine.getReasonPhrase();
@@ -82,7 +83,7 @@ public class SimplifiedResponse {
         {
             try
                 {
-                    this.response.getEntity().consumeContent();
+                    EntityUtils.consume(this.response.getEntity());
                 }
             catch (Exception e)
                 {
@@ -91,14 +92,7 @@ public class SimplifiedResponse {
         }
 
     public void close(){
-        try
-            {
-                getResponse().getEntity().consumeContent();
-            }
-        catch (IOException e)
-            {
-                throw new RuntimeException(e);
-            }
+        closeResponse();
     }
     public void print()
         {

@@ -29,17 +29,17 @@ public class RequestException extends Exception {
 
     public static Logger LOG = LoggerFactory.getLogger(RequestException.class);
 
-    public RequestException(final String url, final String params, final HTTP_METHODS method, final String message, final Throwable cause)
+    public RequestException(final String url, final String params, final String method, final String message, final Throwable cause)
         {
             LOG.error("Failed {} request to {}: ({}) {}", new Object[] { method.toString(), url, message, params });
         }
 
-    public RequestException(final String url, final String params, final HTTP_METHODS method, final Throwable cause)
+    public RequestException(final String url, final String params, final String method, final Throwable cause)
         {
             LOG.error("Failed {} request to {}: {}", new Object[] { method.toString(), url, params });
         }
 
-    public RequestException(final String url, final HTTP_METHODS method, final Throwable cause)
+    public RequestException(final String url, final String method, final Throwable cause)
         {
             LOG.error("Failed {} request to {}", new Object[] { method.toString(), url });
             LOG.error(cause.getMessage());

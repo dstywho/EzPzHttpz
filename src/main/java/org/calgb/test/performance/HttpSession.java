@@ -1,5 +1,6 @@
 package org.calgb.test.performance;
 
+import java.io.IOException;
 import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.io.Writer;
@@ -34,6 +35,7 @@ import org.apache.http.impl.client.DefaultHttpClient;
 import org.apache.http.impl.conn.tsccm.ThreadSafeClientConnManager;
 import org.apache.http.impl.cookie.BasicClientCookie2;
 import org.apache.http.protocol.BasicHttpContext;
+import org.apache.http.util.EntityUtils;
 import org.calgb.test.performance.RequestException.HTTP_METHODS;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -79,7 +81,7 @@ public class HttpSession {
                     e.printStackTrace(printWriter);
                     LOG.error("REQUEST EXCEPTION");
                     LOG.error(writer.toString());
-                    throw new RequestException(request.getURI().getPath(), HTTP_METHODS.POST, e);
+                    throw new RequestException(request.getURI().getPath(), request.getMethod(), e);
                 }
 
             final SimplifiedResponse simplifiedResponse = new SimplifiedResponse(lastResponse);
@@ -192,53 +194,6 @@ public class HttpSession {
             context.setAttribute(ClientContext.COOKIE_STORE, store);
         }
 
-    private DefaultHttpClient useTrustingTrustManager(final DefaultHttpClient httpClient, final int port) throws KeyManagementException, NoSuchAlgorithmException
-        {
-            // First create a trust manager that won't care.
-            final X509TrustManager trustManager = new X509TrustManager()
-                {
-                    public void checkClientTrusted(final X509Certificate[] chain, final String authType) throws CertificateException
-                        {
-                            // Don't do anything.
-                        }
-
-                    public void checkServerTrusted(final X509Certificate[] chain, final String authType) throws CertificateException
-                        {
-                            // Don't do anything.
-                        }
-
-                    public X509Certificate[] getAcceptedIssuers()
-                        {
-                            // Don't do anything.
-                            return null;
-                        }
-                };
-
-            // Now put the trust manager into an SSLContext.
-            final SSLContext sslcontext = SSLContext.getInstance("TLS");
-            sslcontext.init(null, new TrustManager[] { trustManager }, null);
-
-            // Use the above SSLContext to create your socket factory
-            // (I found trying to extend the factory a bit difficult due to a
-            // call to createSocket with no arguments, a method which doesn't
-            // exist anywhere I can find, but hey-ho).
-            final SSLSocketFactory sf = new SSLSocketFactory(sslcontext);
-            sf.setHostnameVerifier(SSLSocketFactory.ALLOW_ALL_HOSTNAME_VERIFIER);
-
-            // If you want a thread safe client, use the ThreadSafeConManager, but
-            // otherwise just grab the one from the current client, and get hold of its
-            // schema registry. THIS IS THE KEY THING.
-            final ClientConnectionManager ccm = httpClient.getConnectionManager();
-            final SchemeRegistry schemeRegistry = ccm.getSchemeRegistry();
-
-            // Register our new socket factory with the typical SSL port and the
-            // correct protocol name.
-            schemeRegistry.register(new Scheme("https", sf, port));
-
-            // Finally, apply the ClientConnectionManager to the Http Client
-            // or, as in this example, create a new one.
-            return new DefaultHttpClient(ccm, httpClient.getParams());
-        }
 
     public void printCookies()
         {
@@ -301,5 +256,12 @@ public class HttpSession {
             // client.executePost("/icds/widgets/DictionarySearch.action?_eventName=search", formparams);
             // System.out.println(client.lastResponseBody);
             // client.releaseConnectionIfAvailiable();
+        }
+
+    public SimplifiedResponse sendTransactionAndClose(HttpRequestBase request) throws ProcessResponseBodyException, RequestException
+        {
+            SimplifiedResponse result = sendTransaction(request);
+            result.close();
+            return result;
         }
 }
